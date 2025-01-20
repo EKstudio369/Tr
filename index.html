@@ -2,194 +2,176 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Crypto Chart</title>
-  <!-- Подключаем Chart.js из CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>369 — Сигналы по топ-100 криптомонетам</title>
   <style>
     body {
-      background-color: #1b1b1b;
-      color: #fff;
       font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
+      margin: 20px;
+      background: #f2f2f2;
+    }
+    h1, h2 {
       text-align: center;
     }
-    h1 {
-      margin: 20px 0;
+    .loading {
+      text-align: center;
+      font-size: 1.2em;
     }
-    #chart-container {
-      max-width: 800px;
+    table {
       margin: 0 auto;
-      background: #2b2b2b;
-      padding: 20px;
-      border-radius: 8px;
-    }
-    canvas {
+      border-collapse: collapse;
+      width: 90%;
+      max-width: 1200px;
       background: #fff;
-      border: 1px solid #333;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background: #fafafa;
+    }
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+    .signal-long {
+      color: green;
+      font-weight: bold;
+    }
+    .signal-short {
+      color: red;
+      font-weight: bold;
+    }
+    .signal-hold {
+      color: #555;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
+  <h1>Аналитика Топ-100 Криптомонет</h1>
+  <h2>Кодовое название: 369</h2>
 
-<h1>BTC Chart with Entry Points</h1>
-<div id="chart-container">
-  <canvas id="myChart" width="800" height="400"></canvas>
-</div>
+  <div id="loading" class="loading">Загрузка данных...</div>
+  <table id="crypto-table" style="display: none;">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Название</th>
+        <th>Тикер</th>
+        <th>Текущая цена (USD)</th>
+        <th>Изменение за 24ч (%)</th>
+        <th>Сигнал</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
-<script>
-/******************************************************************************
- * 1) ФУНКЦИИ ДЛЯ ПОЛУЧЕНИЯ ДАННЫХ С COINGECKO
- ******************************************************************************/
-async function fetchBTCData() {
-  // Берём данные по Bitcoin, включая sparkline за 7 дней
-  const url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin&sparkline=true';
-  try {
-    const resp = await fetch(url);
-    const data = await resp.json();
-    return data[0]; // объект данных по BTC
-  } catch (e) {
-    console.error('Ошибка запроса к CoinGecko:', e);
-    return null;
-  }
-}
-
-/******************************************************************************
- * 2) ПОДГОТОВКА ДАННЫХ И СИГНАЛЫ «ВХОДА»
- ******************************************************************************/
-
-// Простая скользящая средняя (Simple Moving Average)
-function sma(data, period = 7) {
-  if (data.length < period) return data.map(() => null);
-  const result = [];
-  for (let i = 0; i < data.length; i++) {
-    if (i < period - 1) {
-      result.push(null);
-    } else {
-      let sum = 0;
-      for (let j = i - period + 1; j <= i; j++) {
-        sum += data[j];
-      }
-      result.push(sum / period);
-    }
-  }
-  return result;
-}
-
-// Определяем точки входа (entry points), когда цена ниже SMA на текущей свече
-function getEntryPoints(prices, smaArr) {
-  const entries = [];
-  for (let i = 0; i < prices.length; i++) {
-    if (!smaArr[i]) continue; 
-    if (prices[i] < smaArr[i]) {
-      // Считаем, что это потенциальная точка входа
-      entries.push({ x: i, y: prices[i] });
-    }
-  }
-  return entries;
-}
-
-/******************************************************************************
- * 3) ОТРИСОВКА ГРАФИКА С ПОМОЩЬЮ CHART.JS
- ******************************************************************************/
-function drawChart(labels, prices, smaArr, entryPoints) {
-  const ctx = document.getElementById('myChart').getContext('2d');
-  // Если уже есть предыдущий график, уничтожим его (при повторном вызове)
-  if (window.myChartInstance) {
-    window.myChartInstance.destroy();
-  }
-
-  window.myChartInstance = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: labels, // подписи по оси X
-      datasets: [
-        {
-          label: 'BTC Price',
-          data: prices,
-          borderColor: '#4caf50',
-          backgroundColor: '#4caf50',
-          pointRadius: 0,
-          borderWidth: 2,
-          yAxisID: 'y'
-        },
-        {
-          label: 'SMA(7)',
-          data: smaArr,
-          borderColor: '#ffeb3b',
-          backgroundColor: '#ffeb3b',
-          pointRadius: 0,
-          borderWidth: 2,
-          yAxisID: 'y'
-        },
-        {
-          label: 'Entry Points',
-          data: entryPoints, // scatter точки
-          type: 'scatter',
-          backgroundColor: '#f44336',
-          pointRadius: 5,
-          yAxisID: 'y'
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        y: {
-          type: 'linear',
-          position: 'left',
-          ticks: { color: '#fff' },
-          grid: { color: 'rgba(255,255,255,0.2)' }
-        },
-        x: {
-          ticks: { display: false }, // убираем подписи, т.к. это индексы
-          grid: { color: 'rgba(255,255,255,0.2)' }
-        }
-      },
-      plugins: {
-        legend: {
-          labels: { color: '#fff' }
-        },
-        tooltip: {
-          intersect: false,
-          mode: 'index'
-        }
+  <script>
+    // Функция для определения сигнала (LONG, SHORT, HOLD)
+    // По умолчанию здесь простой пример, ориентируемся на процент изменения за 24 часа:
+    //  > +5%  -> LONG
+    //  < -5%  -> SHORT
+    // иначе   -> HOLD
+    function getSignal(priceChange24h) {
+      if (priceChange24h > 5) {
+        return 'LONG';
+      } else if (priceChange24h < -5) {
+        return 'SHORT';
+      } else {
+        return 'HOLD';
       }
     }
-  });
-}
 
-/******************************************************************************
- * 4) ОСНОВНАЯ ФУНКЦИЯ
- ******************************************************************************/
-async function init() {
-  const data = await fetchBTCData();
-  if (!data) {
-    alert('Не удалось загрузить данные по BTC');
-    return;
-  }
-  // Берём sparkline за 7 дней
-  const spark = data.sparkline_in_7d.price || [];
-  // Для наглядности, чтобы график не был слишком длинным, возьмём последние 100 точек
-  const maxPoints = 100;
-  const startIdx = Math.max(0, spark.length - maxPoints);
-  const prices = spark.slice(startIdx);
+    // Запрос к публичному API CoinGecko для получения топ-100 монет
+    // (без sparkline, сортировка по рыночной капитализации)
+    const apiUrl = 'https://api.coingecko.com/api/v3/coins/markets' +
+                   '?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false';
 
-  // Строим массив X-меток (просто индексы)
-  const labels = prices.map((_, i) => i.toString());
+    // Функция для загрузки и отображения данных
+    async function loadData() {
+      try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          throw new Error('Ошибка сети при получении данных с CoinGecko');
+        }
+        const data = await response.json();
+        renderTable(data);
+      } catch (error) {
+        console.error('Ошибка:', error);
+        document.getElementById('loading').textContent = 'Ошибка загрузки данных';
+      }
+    }
 
-  // Считаем SMA(7)
-  const smaArr = sma(prices, 7);
+    // Функция для рендера таблицы с данными
+    function renderTable(cryptoData) {
+      const tableBody = document.querySelector('#crypto-table tbody');
+      tableBody.innerHTML = '';
 
-  // Ищем точки входа
-  const entryPts = getEntryPoints(prices, smaArr);
+      cryptoData.forEach((coin, index) => {
+        const priceChange24h = coin.price_change_percentage_24h || 0;
+        const signal = getSignal(priceChange24h);
 
-  // Рисуем график
-  drawChart(labels, prices, smaArr, entryPts);
-}
+        // Создаём строку таблицы
+        const row = document.createElement('tr');
+        
+        // Номер по порядку
+        const cellIndex = document.createElement('td');
+        cellIndex.textContent = index + 1;
+        
+        // Название монеты
+        const cellName = document.createElement('td');
+        cellName.textContent = coin.name;
+        
+        // Символ (тикер) монеты
+        const cellSymbol = document.createElement('td');
+        cellSymbol.textContent = coin.symbol.toUpperCase();
+        
+        // Текущая цена
+        const cellCurrentPrice = document.createElement('td');
+        cellCurrentPrice.textContent = coin.current_price.toLocaleString('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 8
+        });
+        
+        // Изменение за 24 часа (%)
+        const cellChange24h = document.createElement('td');
+        cellChange24h.textContent = priceChange24h.toFixed(2) + ' %';
+        if (priceChange24h > 0) {
+          cellChange24h.style.color = 'green';
+        } else if (priceChange24h < 0) {
+          cellChange24h.style.color = 'red';
+        }
 
-init();
-</script>
+        // Сигнал (LONG / SHORT / HOLD)
+        const cellSignal = document.createElement('td');
+        cellSignal.textContent = signal;
+        if (signal === 'LONG') {
+          cellSignal.classList.add('signal-long');
+        } else if (signal === 'SHORT') {
+          cellSignal.classList.add('signal-short');
+        } else {
+          cellSignal.classList.add('signal-hold');
+        }
+
+        row.appendChild(cellIndex);
+        row.appendChild(cellName);
+        row.appendChild(cellSymbol);
+        row.appendChild(cellCurrentPrice);
+        row.appendChild(cellChange24h);
+        row.appendChild(cellSignal);
+
+        tableBody.appendChild(row);
+      });
+
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('crypto-table').style.display = 'table';
+    }
+
+    // Запускаем загрузку данных при открытии страницы
+    loadData();
+  </script>
 </body>
 </html>

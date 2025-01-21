@@ -2,37 +2,40 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>369 — Сигналы по топ-100 криптомонетам</title>
+  <title>Трейдинг-сигналы на 5-минутном графике (Локальное приложение)</title>
+  
+  <!-- Библиотека для удобного парсинга CSV (PapaParse) -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  
+  <!-- Библиотека Plotly для построения графиков -->
+  <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+  
   <style>
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
-      background: #f2f2f2;
     }
-    h1, h2 {
-      text-align: center;
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
     }
-    .loading {
-      text-align: center;
-      font-size: 1.2em;
+    input[type="file"] {
+      margin-bottom: 10px;
+    }
+    #chart {
+      width: 100%;
+      height: 600px;
     }
     table {
-      margin: 0 auto;
       border-collapse: collapse;
-      width: 90%;
-      max-width: 1200px;
-      background: #fff;
+      margin-top: 10px;
     }
     th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: center;
+      border: 1px solid #ccc;
+      padding: 6px;
     }
     th {
-      background: #fafafa;
-    }
-    tr:hover {
-      background-color: #f1f1f1;
+      background-color: #f7f7f7;
     }
     .signal-long {
       color: green;
@@ -42,136 +45,378 @@
       color: red;
       font-weight: bold;
     }
-    .signal-hold {
-      color: #555;
-      font-weight: bold;
-    }
   </style>
 </head>
 <body>
-  <h1>Аналитика Топ-100 Криптомонет</h1>
-  <h2>Кодовое название: 369</h2>
-
-  <div id="loading" class="loading">Загрузка данных...</div>
-  <table id="crypto-table" style="display: none;">
+<div class="container">
+  <h2>Трейдинг-сигналы на 5-минутном графике (локальное приложение)</h2>
+  
+  <p>
+    Загрузите CSV-файл со столбцами <strong>Datetime, Open, High, Low, Close, Volume</strong>.  
+    Формат даты/времени должен корректно читаться (например: <em>2023-01-10 09:05:00</em>).
+  </p>
+  
+  <input type="file" id="fileInput" accept=".csv" />
+  <button id="loadButton">Загрузить данные</button>
+  
+  <div id="chart"></div>
+  
+  <h3>Последние сигналы</h3>
+  <table id="signalsTable">
     <thead>
       <tr>
-        <th>#</th>
-        <th>Название</th>
-        <th>Тикер</th>
-        <th>Текущая цена (USD)</th>
-        <th>Изменение за 24ч (%)</th>
+        <th>Дата/Время</th>
+        <th>Close</th>
+        <th>MACD</th>
+        <th>Signal</th>
+        <th>RSI</th>
         <th>Сигнал</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
+</div>
 
-  <script>
-    // Функция для определения сигнала (LONG, SHORT, HOLD)
-    // По умолчанию здесь простой пример, ориентируемся на процент изменения за 24 часа:
-    //  > +5%  -> LONG
-    //  < -5%  -> SHORT
-    // иначе   -> HOLD
-    function getSignal(priceChange24h) {
-      if (priceChange24h > 5) {
-        return 'LONG';
-      } else if (priceChange24h < -5) {
-        return 'SHORT';
-      } else {
-        return 'HOLD';
-      }
+<script>
+// ==========================
+// Функции для расчёта индикаторов (на JS)
+// ==========================
+
+/**
+ * Рассчёт экспоненциального среднего (EMA).
+ * @param {Array<number>} values - массив цен.
+ * @param {number} period - период сглаживания.
+ * @returns {Array<number>} массив значений EMA (той же длины, что и values).
+ */
+function computeEMA(values, period) {
+  const emaValues = [];
+  let k = 2 / (period + 1);
+  
+  // Для начала возьмём первую EMA как простое среднее первых period (или начнём просто с первой цены)
+  let emaPrev = values[0];
+  emaValues[0] = emaPrev; // или NaN, но пусть будет так.
+  
+  for (let i = 1; i < values.length; i++) {
+    let price = values[i];
+    let emaCurrent = price * k + emaPrev * (1 - k);
+    emaValues[i] = emaCurrent;
+    emaPrev = emaCurrent;
+  }
+  return emaValues;
+}
+
+/**
+ * Рассчёт MACD (Moving Average Convergence Divergence).
+ * MACD = EMA(fast) - EMA(slow), затем Signal = EMA(MACD, signalPeriod).
+ * @param {Array<number>} closePrices 
+ * @param {number} fastPeriod 
+ * @param {number} slowPeriod 
+ * @param {number} signalPeriod 
+ * @returns {Object} { macdLine: [], signalLine: [], hist: [] }
+ */
+function computeMACD(closePrices, fastPeriod=12, slowPeriod=26, signalPeriod=9) {
+  const emaFast = computeEMA(closePrices, fastPeriod);
+  const emaSlow = computeEMA(closePrices, slowPeriod);
+  
+  const macdLine = closePrices.map((_, i) => emaFast[i] - emaSlow[i]);
+  const signalLine = computeEMA(macdLine, signalPeriod);
+  const hist = macdLine.map((val, i) => val - signalLine[i]);
+  
+  return { macdLine, signalLine, hist };
+}
+
+/**
+ * Рассчёт RSI (Relative Strength Index).
+ * Упрощённая формула: среднее положительных/отрицательных изменений за период.
+ * @param {Array<number>} closePrices 
+ * @param {number} period 
+ * @returns {Array<number>} RSI (той же длины, что и closePrices).
+ */
+function computeRSI(closePrices, period=14) {
+  let rsiArray = new Array(closePrices.length).fill(NaN);
+
+  // Нужно будет считать изменения (diff)
+  let gains = new Array(closePrices.length).fill(0);
+  let losses = new Array(closePrices.length).fill(0);
+
+  for (let i = 1; i < closePrices.length; i++) {
+    let change = closePrices[i] - closePrices[i - 1];
+    if (change > 0) {
+      gains[i] = change;
+      losses[i] = 0;
+    } else {
+      gains[i] = 0;
+      losses[i] = Math.abs(change);
     }
+  }
 
-    // Запрос к публичному API CoinGecko для получения топ-100 монет
-    // (без sparkline, сортировка по рыночной капитализации)
-    const apiUrl = 'https://api.coingecko.com/api/v3/coins/markets' +
-                   '?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false';
+  // Первое "скользящее" среднее
+  let avgGain = 0, avgLoss = 0;
+  // Для простоты возьмём среднее за первые `period` значений (с 1 до period включительно)
+  for (let i = 1; i <= period; i++) {
+    avgGain += gains[i];
+    avgLoss += losses[i];
+  }
+  avgGain /= period;
+  avgLoss /= period;
 
-    // Функция для загрузки и отображения данных
-    async function loadData() {
-      try {
-        const response = await fetch(apiUrl);
-        if (!response.ok) {
-          throw new Error('Ошибка сети при получении данных с CoinGecko');
+  rsiArray[period] = calcRSI(avgGain, avgLoss);
+
+  // Далее двигаемся по массиву
+  for (let i = period + 1; i < closePrices.length; i++) {
+    // Сглаживание, похожее на EMA
+    avgGain = (avgGain * (period - 1) + gains[i]) / period;
+    avgLoss = (avgLoss * (period - 1) + losses[i]) / period;
+    rsiArray[i] = calcRSI(avgGain, avgLoss);
+  }
+
+  return rsiArray;
+
+  function calcRSI(gain, loss) {
+    if (loss === 0) {
+      return 100;
+    }
+    let rs = gain / loss;
+    return 100 - (100 / (1 + rs));
+  }
+}
+
+/**
+ * Функция генерации сигналов
+ * Возвращает массив сигналов (1 = лонг, -1 = шорт, 0 = нет сигнала)
+ * Логика:
+ * - Лонг при пересечении MACD и Signal снизу вверх, RSI < 50, цена > EMA
+ * - Шорт при пересечении MACD и Signal сверху вниз, RSI > 50, цена < EMA
+ */
+function generateSignals(data) {
+  // data: массив объектов { datetime, open, high, low, close, volume, ... }
+  const signals = new Array(data.length).fill(0);
+
+  for (let i = 1; i < data.length; i++) {
+    const prev = data[i-1];
+    const cur = data[i];
+
+    // Проверяем пересечение MACD/Signal
+    // (MACD > Signal сейчас) AND (MACD <= Signal раньше) => пересечение снизу вверх
+    let crossedUp = (cur.macd > cur.macdSignal) && (prev.macd <= prev.macdSignal);
+    let crossedDown = (cur.macd < cur.macdSignal) && (prev.macd >= prev.macdSignal);
+
+    // Условие Лонг
+    if (crossedUp && cur.rsi < 50 && cur.close > cur.ema20) {
+      signals[i] = 1;
+    }
+    // Условие Шорт
+    else if (crossedDown && cur.rsi > 50 && cur.close < cur.ema20) {
+      signals[i] = -1;
+    }
+  }
+  return signals;
+}
+
+// ==========================
+// Основная логика
+// ==========================
+
+document.getElementById('loadButton').addEventListener('click', () => {
+  const fileInput = document.getElementById('fileInput');
+  if (!fileInput.files || fileInput.files.length === 0) {
+    alert('Пожалуйста, выберите CSV-файл!');
+    return;
+  }
+
+  const file = fileInput.files[0];
+  Papa.parse(file, {
+    header: true,
+    skipEmptyLines: true,
+    complete: function(results) {
+      // results.data - это массив объектов, где ключи = названия колонок
+      const rawData = results.data;
+      // Преобразуем строки в числовые типы и пр.
+      let preparedData = [];
+      
+      for (let row of rawData) {
+        // Иногда в CSV могут быть пустые поля или неточные данные. Проверим:
+        if (!row.Datetime || !row.Close || !row.Open) {
+          continue;
         }
-        const data = await response.json();
-        renderTable(data);
-      } catch (error) {
-        console.error('Ошибка:', error);
-        document.getElementById('loading').textContent = 'Ошибка загрузки данных';
-      }
-    }
+        let dateTimeStr = row.Datetime.trim();
+        let openVal = parseFloat(row.Open);
+        let highVal = parseFloat(row.High);
+        let lowVal = parseFloat(row.Low);
+        let closeVal = parseFloat(row.Close);
+        let volumeVal = parseFloat(row.Volume);
 
-    // Функция для рендера таблицы с данными
-    function renderTable(cryptoData) {
-      const tableBody = document.querySelector('#crypto-table tbody');
-      tableBody.innerHTML = '';
+        // Проверим, всё ли нормально сконвертировалось
+        if (isNaN(openVal) || isNaN(highVal) || isNaN(lowVal) || isNaN(closeVal) || isNaN(volumeVal)) {
+          continue;
+        }
 
-      cryptoData.forEach((coin, index) => {
-        const priceChange24h = coin.price_change_percentage_24h || 0;
-        const signal = getSignal(priceChange24h);
-
-        // Создаём строку таблицы
-        const row = document.createElement('tr');
-        
-        // Номер по порядку
-        const cellIndex = document.createElement('td');
-        cellIndex.textContent = index + 1;
-        
-        // Название монеты
-        const cellName = document.createElement('td');
-        cellName.textContent = coin.name;
-        
-        // Символ (тикер) монеты
-        const cellSymbol = document.createElement('td');
-        cellSymbol.textContent = coin.symbol.toUpperCase();
-        
-        // Текущая цена
-        const cellCurrentPrice = document.createElement('td');
-        cellCurrentPrice.textContent = coin.current_price.toLocaleString('en-US', {
-          style: 'currency',
-          currency: 'USD',
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 8
+        preparedData.push({
+          datetime: dateTimeStr,
+          open: openVal,
+          high: highVal,
+          low: lowVal,
+          close: closeVal,
+          volume: volumeVal
         });
-        
-        // Изменение за 24 часа (%)
-        const cellChange24h = document.createElement('td');
-        cellChange24h.textContent = priceChange24h.toFixed(2) + ' %';
-        if (priceChange24h > 0) {
-          cellChange24h.style.color = 'green';
-        } else if (priceChange24h < 0) {
-          cellChange24h.style.color = 'red';
-        }
+      }
 
-        // Сигнал (LONG / SHORT / HOLD)
-        const cellSignal = document.createElement('td');
-        cellSignal.textContent = signal;
-        if (signal === 'LONG') {
-          cellSignal.classList.add('signal-long');
-        } else if (signal === 'SHORT') {
-          cellSignal.classList.add('signal-short');
-        } else {
-          cellSignal.classList.add('signal-hold');
-        }
+      if (preparedData.length === 0) {
+        alert("Нет валидных данных в CSV!");
+        return;
+      }
 
-        row.appendChild(cellIndex);
-        row.appendChild(cellName);
-        row.appendChild(cellSymbol);
-        row.appendChild(cellCurrentPrice);
-        row.appendChild(cellChange24h);
-        row.appendChild(cellSignal);
+      // Сортируем по дате (на всякий случай), если CSV не отсортирован
+      preparedData.sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
 
-        tableBody.appendChild(row);
-      });
+      // Выделим массив close-цен для вычисления индикаторов
+      const closeArray = preparedData.map(d => d.close);
 
-      document.getElementById('loading').style.display = 'none';
-      document.getElementById('crypto-table').style.display = 'table';
+      // 1) EMA(20)
+      const ema20 = computeEMA(closeArray, 20);
+      // 2) MACD
+      const { macdLine, signalLine } = computeMACD(closeArray);
+      // 3) RSI(14)
+      const rsi14 = computeRSI(closeArray, 14);
+
+      // Запишем результаты обратно
+      for (let i = 0; i < preparedData.length; i++) {
+        preparedData[i].ema20 = ema20[i];
+        preparedData[i].macd = macdLine[i];
+        preparedData[i].macdSignal = signalLine[i];
+        preparedData[i].rsi = rsi14[i];
+      }
+
+      // Генерируем сигналы
+      const signals = generateSignals(preparedData);
+      for (let i = 0; i < preparedData.length; i++) {
+        preparedData[i].signal = signals[i];
+      }
+
+      // Рисуем график
+      plotChart(preparedData);
+
+      // Показываем последние сигналы в таблице
+      renderSignalsTable(preparedData, 20); // последние 20 строк
     }
+  });
+});
 
-    // Запускаем загрузку данных при открытии страницы
-    loadData();
-  </script>
+/**
+ * Функция для отображения графика (цена + сигналы).
+ * @param {Array<Object>} data 
+ */
+function plotChart(data) {
+  // Подготовим массивы для Plotly
+  const xValues = data.map(d => d.datetime);
+  const closeValues = data.map(d => d.close);
+  const ema20Values = data.map(d => d.ema20);
+
+  // Точки входа/выхода (сигналы)
+  // Покажем их отдельными trace, где X - только те точки, где signal != 0
+  const longEntries = data
+    .filter(d => d.signal === 1)
+    .map(d => ({ x: d.datetime, y: d.close }));
+  
+  const shortEntries = data
+    .filter(d => d.signal === -1)
+    .map(d => ({ x: d.datetime, y: d.close }));
+
+  const tracePrice = {
+    x: xValues,
+    y: closeValues,
+    mode: 'lines',
+    name: 'Close Price',
+    line: { color: 'blue' }
+  };
+
+  const traceEMA = {
+    x: xValues,
+    y: ema20Values,
+    mode: 'lines',
+    name: 'EMA(20)',
+    line: { color: 'orange' }
+  };
+
+  const traceLong = {
+    x: longEntries.map(p => p.x),
+    y: longEntries.map(p => p.y),
+    mode: 'markers',
+    name: 'Long Signal',
+    marker: { color: 'green', symbol: 'triangle-up', size: 8 }
+  };
+
+  const traceShort = {
+    x: shortEntries.map(p => p.x),
+    y: shortEntries.map(p => p.y),
+    mode: 'markers',
+    name: 'Short Signal',
+    marker: { color: 'red', symbol: 'triangle-down', size: 8 }
+  };
+
+  const layout = {
+    title: 'График цены и сигналы',
+    xaxis: { title: 'Дата/Время' },
+    yaxis: { title: 'Цена' }
+  };
+
+  Plotly.newPlot('chart', [tracePrice, traceEMA, traceLong, traceShort], layout);
+}
+
+/**
+ * Функция для отображения последних N сигналов в таблице.
+ */
+function renderSignalsTable(data, lastN=20) {
+  const tableBody = document.querySelector('#signalsTable tbody');
+  tableBody.innerHTML = ''; // очистим
+
+  // Возьмём последние N строк
+  const sliceData = data.slice(-lastN);
+
+  for (let row of sliceData) {
+    const tr = document.createElement('tr');
+
+    // Дата/время
+    const tdDate = document.createElement('td');
+    tdDate.textContent = row.datetime;
+    tr.appendChild(tdDate);
+
+    // Close
+    const tdClose = document.createElement('td');
+    tdClose.textContent = row.close.toFixed(4);
+    tr.appendChild(tdClose);
+
+    // MACD
+    const tdMacd = document.createElement('td');
+    tdMacd.textContent = (row.macd !== undefined) ? row.macd.toFixed(4) : '';
+    tr.appendChild(tdMacd);
+
+    // Signal
+    const tdMacdSignal = document.createElement('td');
+    tdMacdSignal.textContent = (row.macdSignal !== undefined) ? row.macdSignal.toFixed(4) : '';
+    tr.appendChild(tdMacdSignal);
+
+    // RSI
+    const tdRsi = document.createElement('td');
+    tdRsi.textContent = (row.rsi !== undefined) ? row.rsi.toFixed(2) : '';
+    tr.appendChild(tdRsi);
+
+    // Сигнал (1 = Лонг, -1 = Шорт, 0 = нет)
+    const tdSignal = document.createElement('td');
+    if (row.signal === 1) {
+      tdSignal.textContent = 'Лонг';
+      tdSignal.classList.add('signal-long');
+    } else if (row.signal === -1) {
+      tdSignal.textContent = 'Шорт';
+      tdSignal.classList.add('signal-short');
+    } else {
+      tdSignal.textContent = '-';
+    }
+    tr.appendChild(tdSignal);
+
+    tableBody.appendChild(tr);
+  }
+}
+</script>
 </body>
 </html>

@@ -12,7 +12,7 @@
   <style>
     /* 
       =======================================
-      ПРЕЛОАДЕР
+      ПРЕЛОАДЕР (с вращающимся кольцом)
       =======================================
     */
     #preloader {
@@ -23,6 +23,7 @@
       height: 100vh;
       background: linear-gradient(135deg, #1e1e2f, #2c2c54);
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
       z-index: 100000; 
@@ -32,23 +33,29 @@
       opacity: 0;
       pointer-events: none;
     }
+    /* Текст */
     .preloader-content {
-      text-align: center;
       color: #fff;
       font-family: 'Great Vibes', cursive;
       font-size: 2rem;
-      animation: pulse 2s infinite;
+      margin-bottom: 20px;
+      animation: textPulse 2s infinite;
     }
-    @keyframes pulse {
-      0% {
-        opacity: 1;
-      }
-      50% {
-        opacity: 0.5;
-      }
-      100% {
-        opacity: 1;
-      }
+    @keyframes textPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    /* Вращающееся кольцо */
+    .loader-ring {
+      width: 60px;
+      height: 60px;
+      border: 6px solid rgba(64,224,208,0.3);
+      border-top: 6px solid #40E0D0;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
 
     /*
@@ -64,7 +71,7 @@
     body {
       width: 100%;
       height: 100vh;
-      overflow: hidden;
+      overflow: hidden; /* чтобы страница не прокручивалась */
       background: linear-gradient(135deg, #1e1e2f, #2c2c54);
       display: flex;
       flex-direction: column;
@@ -76,24 +83,24 @@
       user-select: none;
     }
 
-    /* Верхнее описание сайта */
+    /*
+      =======================================
+      ВЕРХНЕЕ ОПИСАНИЕ (компактнее)
+      =======================================
+    */
     .site-description {
       color: #fff;
       text-align: center;
-      margin-top: 10px;
-      font-size: 1rem;
+      margin-top: 10px; /* чуть уменьшили */
+      font-size: 1.1rem; /* чуть меньше */
       line-height: 1.4;
       max-width: 90%;
       z-index: 2;
     }
 
-    /*
-      =======================================
-      КНОПКА СТРЕЛОЧКА НАЗАД (вместо "Закрити")
-      =======================================
-    */
+    /* Иконка назад (стрелка) вверху слева */
     .back-arrow {
-      display: none; /* скрыта по умолчанию */
+      display: none; 
       position: fixed;
       top: 10px;
       left: 10px;
@@ -115,33 +122,6 @@
       transform: scale(1.05);
     }
 
-    /*
-      =======================================
-      КНОПКА СТРЕЛОЧКА ДЛЯ ПЕРЕТАСОВКИ (↻)
-      =======================================
-    */
-    .shuffle-arrow {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      z-index: 10000;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: rgba(64,224,208,0.2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: 0.9rem;
-      color: #40E0D0;
-      transition: background 0.3s, transform 0.3s;
-    }
-    .shuffle-arrow:hover {
-      background: rgba(64,224,208,0.4);
-      transform: rotate(25deg);
-    }
-
     /* Контейнер для падающих звёзд */
     .stars {
       position: absolute;
@@ -156,7 +136,7 @@
 
     /*
       =======================================
-      СЕТКА С МАЛЕНЬКИМИ КАРТАМИ
+      СЕТКА С МАЛЕНЬКИМИ КАРТАМИ (подняли выше)
       =======================================
     */
     .cards-grid {
@@ -169,7 +149,7 @@
       max-width: 100%;
       gap: 10px;
       padding: 20px;
-      margin-top: 20px; /* немного ниже */
+      margin-top: 5px; /* подняли выше */
     }
 
     /* Контейнер под каждую маленькую карту */
@@ -178,12 +158,9 @@
       height: 112px; /* пропорция 3:4 */
       perspective: 1000px;
       position: relative;
-
-      /* Анимация всплытия при загрузке (появление) */
       transform: scale(0);
       animation: popIn 0.5s forwards ease;
     }
-    /* Небольшая задержка для "ступенчатого" появления */
     .card-container:nth-child(n) {
       animation-delay: calc(0.04s * var(--i));
     }
@@ -221,8 +198,6 @@
       width: 100%;
       height: 100%;
     }
-
-    /* Подпись на маленькой карте (логотип) */
     .small-card .logo {
       position: absolute;
       bottom: 3px;
@@ -244,7 +219,7 @@
       width: 100vw;
       height: 100vh;
       background: rgba(0, 0, 0, 0.7);
-      display: none; /* скрыт по умолчанию */
+      display: none; 
       justify-content: center;
       align-items: center;
       z-index: 9999;
@@ -257,8 +232,8 @@
     }
 
     .overlay-card-container {
-      width: 320px;  /* размеры большой карты */
-      height: 448px; /* пропорция 3:4 */
+      width: 320px; 
+      height: 448px; 
       perspective: 2000px;
       position: relative;
       transform: translateY(20px) scale(0.8);
@@ -283,8 +258,6 @@
       border-radius: 12px;
       transition: transform 0.8s cubic-bezier(0.4, 0.2, 0.2, 1);
     }
-
-    /* Свечение */
     .big-card::after {
       content: "";
       position: absolute;
@@ -316,7 +289,6 @@
           0 0 60px rgba(64, 224, 208, 0.4);
       }
     }
-
     .big-card.is-flipped {
       transform: rotateY(180deg);
     }
@@ -332,11 +304,12 @@
       backface-visibility: hidden;
     }
 
+    /* Передняя сторона (случайная картинка) */
     .big-card-front {
       background-size: cover;
       background-position: center;
     }
-
+    /* Задняя сторона — текст + кнопка «Отримати консультацію» */
     .big-card-back {
       background: #1b1b2d;
       color: #40E0D0;
@@ -350,69 +323,102 @@
     }
     .big-card-back h2 {
       margin-bottom: 10px;
-      font-size: 1.3rem;
+      font-size: 1.2rem;
     }
     .big-card-back p {
       font-size: 1rem;
       line-height: 1.4;
       margin: 0 0 10px 0;
     }
-
-    /*
-      =======================================
-      ПАДАЮЩИЕ ЗВЁЗДЫ
-      =======================================
-    */
-    .star {
-      position: absolute;
-      top: -5px;
-      left: 50%;
-      width: 2px;
-      height: 2px;
-      background: radial-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.2));
-      border-radius: 50%;
-      animation: fall linear infinite;
+    /* Кнопка "Отримати консультацію" */
+    .consult-button {
+      display: inline-block;
+      background: #40E0D0;
+      color: #1e1e2f;
+      padding: 8px 14px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: background 0.3s;
     }
-    @keyframes fall {
-      to {
-        transform: translateY(110vh);
-      }
+    .consult-button:hover {
+      background: #33bdb6;
     }
 
     /*
       =====================================
-      АНИМАЦИЯ ПРИ ПЕРЕТАСОВКЕ
+      КНОПКА «ПЕРЕТАСУВАТИ» (внизу)
+      =====================================
+    */
+    .shuffle-container {
+      position: absolute;
+      bottom: 80px; /* подняли чуть выше нижнего меню */
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      z-index: 2;
+    }
+    .shuffle-arrow {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(64,224,208,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: #40E0D0;
+      transition: background 0.3s, transform 0.3s;
+    }
+    .shuffle-arrow:hover {
+      background: rgba(64,224,208,0.4);
+      transform: scale(1.1);
+    }
+    .shuffle-text {
+      color: #40E0D0;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: opacity 0.3s;
+    }
+    .shuffle-text:hover {
+      opacity: 0.8;
+    }
+
+    /*
+      =====================================
+      НОВАЯ "МАГИЧЕСКАЯ" АНИМАЦИЯ ПЕРЕТАСОВКИ
       =====================================
     */
     .magic-refresh {
-      animation: magicRefresh 0.8s forwards ease;
+      animation: magicRefresh2 1s forwards ease;
     }
-    @keyframes magicRefresh {
+    @keyframes magicRefresh2 {
       0% {
         transform: scale(1) rotate(0deg);
-        opacity: 1;
+        filter: brightness(1) hue-rotate(0deg);
       }
       25% {
-        transform: scale(0.7) rotate(120deg);
-        opacity: 0.9;
+        transform: scale(1.1) rotate(20deg);
+        filter: brightness(1.2) hue-rotate(90deg);
       }
       50% {
-        transform: scale(1) rotate(240deg);
-        opacity: 0.9;
+        transform: scale(0.9) rotate(-15deg);
+        filter: brightness(1.4) hue-rotate(180deg);
       }
       75% {
-        transform: scale(0.85) rotate(360deg);
-        opacity: 0.85;
+        transform: scale(1.05) rotate(10deg);
+        filter: brightness(1.2) hue-rotate(270deg);
       }
       100% {
-        transform: scale(1) rotate(720deg);
-        opacity: 1;
+        transform: scale(1) rotate(0deg);
+        filter: brightness(1) hue-rotate(0deg);
       }
     }
 
     /*
       =====================================
-      НИЖНЕЕ МЕНЮ (ИКОНОЧКИ)
+      НИЖНЕЕ МЕНЮ (4 иконки, больше размер)
       =====================================
     */
     .bottom-menu {
@@ -428,14 +434,14 @@
       backdrop-filter: blur(4px);
     }
     .bottom-menu .menu-icon {
-      width: 36px;
-      height: 36px;
+      width: 50px; /* крупнее */
+      height: 50px; /* крупнее */
       border-radius: 50%;
       background: rgba(64,224,208,0.2);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.8rem;
+      font-size: 0.85rem; /* чуть больше */
       color: #40E0D0;
       cursor: pointer;
       transition: 0.3s;
@@ -445,7 +451,7 @@
       transform: scale(1.1);
     }
 
-    /* Модальные окошки для каждого пункта нижнего меню */
+    /* Модалки (нижнее меню) */
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -503,31 +509,31 @@
 
   <!-- Прелоадер -->
   <div id="preloader">
-    <div class="preloader-content">
-      Завантаження...
-    </div>
+    <div class="preloader-content">Завантаження...</div>
+    <div class="loader-ring"></div>
   </div>
 
   <!-- Падающие звёзды -->
   <div class="stars"></div>
 
-  <!-- Иконка стрелочка (назад) скрыта по умолчанию -->
+  <!-- Иконка назад (←) -->
   <div class="back-arrow" id="backArrow">←</div>
 
-  <!-- Иконка стрелочка (перетасовать) -->
-  <div class="shuffle-arrow" id="shuffleArrow">↻</div>
-
-  <!-- Описание сайта -->
+  <!-- Описание сайта (более компактное) -->
   <div class="site-description">
-    Метафоричні асоціативні карти (МАК) — це чудовий психологічний інструмент.<br>
-    Автор та психолог-консультант: Колоколова Ірина.<br>
-    Оберіть будь-яку картку та перегляньте її у збільшеному вигляді!
+    Метафоричні асоціативні карти — це потужний інструмент для роботи з підсвідомістю, який допомагає глибше зрозуміти себе, виявити приховані проблеми та знайти нові рішення.
   </div>
 
-  <!-- Сетка карт (20 из 100) -->
+  <!-- Сетка с 16 карточками -->
   <div class="cards-grid"></div>
 
-  <!-- НИЖНЕЕ МЕНЮ с иконками -->
+  <!-- Кнопка «Перетасувати» (стрелочка + текст) снизу -->
+  <div class="shuffle-container" id="shuffleContainer">
+    <div class="shuffle-arrow" id="shuffleArrow">↻</div>
+    <div class="shuffle-text" id="shuffleText">Перетасувати</div>
+  </div>
+
+  <!-- Нижнее меню (иконки крупнее) -->
   <div class="bottom-menu">
     <div class="menu-icon" id="menuProfile">Профіль</div>
     <div class="menu-icon" id="menuDiary">Щоденник</div>
@@ -539,12 +545,15 @@
   <div class="overlay" id="overlay">
     <div class="overlay-card-container">
       <div class="big-card" id="bigCard">
-        <!-- Лицевая сторона -->
+        <!-- Лицевая сторона (случайная картинка) -->
         <div class="big-card-face big-card-front" id="bigCardFront"></div>
-        <!-- Задняя сторона -->
+        <!-- Задняя сторона (текст + консультация) -->
         <div class="big-card-face big-card-back">
-          <h2>МАК-Карта</h2>
-          <p>Абстрактний образ із глибоким змістом...</p>
+          <h2>Сьогодні на тебе чекає натхнення та внутрішня гармонія!</h2>
+          <p>Нехай усі кроки будуть сповнені впевненості й віри в себе.</p>
+          <a class="consult-button" href="https://t.me/COSMETOLOOGY" target="_blank">
+            Отримати консультацію
+          </a>
         </div>
       </div>
     </div>
@@ -569,72 +578,67 @@
     <div class="modal-window">
       <div class="close-modal" data-close="#modalTraining">×</div>
       <h3>Тренінги</h3>
-      <p>Корисні матеріали, практики та курси для особистісного зростання та розвитку.</p>
+      <p>Матеріали, практики та курси для особистісного зростання і розвитку.</p>
     </div>
   </div>
   <div class="modal-overlay" id="modalMind">
     <div class="modal-window">
       <div class="close-modal" data-close="#modalMind">×</div>
-      <h3>Саморозвиток</h3>
-      <p>Інструменти, поради та завдання для глибшого розуміння себе та роботи над собою.</p>
+      <h3>Розвиток</h3>
+      <p>Поради та інструменти для глибшого розуміння себе й ефективної роботи над собою.</p>
     </div>
   </div>
 
   <script>
-    // ==================================
-    // ПРЕЛОАДЕР, ЗВЁЗДЫ, ОСНОВНОЙ ФУНКЦИОНАЛ
-    // ==================================
-
-    // (1) Создаём массив из 100 картинок (примерно, "по мотивам мировых шедевров")
-    // Используем те же ссылки для демонстрации — замените на свои реальные при необходимости
+    /* 
+       Массив из 100 карт (случайные изображения picsum.photos).
+       Будем показывать только 16 при перетасовке.
+    */
     const cardsAll = [];
-    for (let i = 1; i <= 100; i++) {
+    for (let i = 101; i <= 200; i++) {
       cardsAll.push({
-        frontImg: `https://i.ibb.co/dWzH9C2/test-card.jpg?random=${i}`
+        randomImg: `https://picsum.photos/id/${i}/300/400`
       });
     }
 
-    // Текущий набор из 20 карт
-    let cardsData = [];
+    let cardsData = []; // текущие 16 карт
 
-    // При загрузке:
     document.addEventListener("DOMContentLoaded", () => {
-      // Прелоадер (3 сек)
+      // Прелоадер
       setTimeout(() => {
         const preloader = document.getElementById('preloader');
         preloader.classList.add('hide');
         setTimeout(() => preloader.style.display = 'none', 500);
       }, 3000);
 
-      // Создаём падающие звёзды
       createFallingStars(40);
 
-      // Выбираем 20 случайных из 100 и рисуем
-      shuffleAndCreateCards();
+      // При первом запуске перемешиваем и показываем 16
+      shuffleAndCreateCards(16);
 
-      // Событие на «стрелка назад» (закрыть большую карту)
+      // Стрелка назад (закрыть оверлей)
       const backArrow = document.getElementById("backArrow");
       backArrow.addEventListener("click", closeOverlay);
 
-      // Событие переворота большой карты
+      // Переворот большой карты
       const bigCard = document.getElementById("bigCard");
       bigCard.addEventListener("click", function() {
         this.classList.toggle("is-flipped");
       });
 
-      // Событие на «стрелка перетасовки»
+      // Перетасовать (иконка + текст)
       const shuffleArrow = document.getElementById("shuffleArrow");
-      shuffleArrow.addEventListener("click", () => {
-        refreshCards();
-      });
+      const shuffleText = document.getElementById("shuffleText");
+      shuffleArrow.addEventListener("click", () => refreshCards(16));
+      shuffleText.addEventListener("click", () => refreshCards(16));
 
-      // События на нижнее меню (4 иконки)
+      // Модальные окна (нижнее меню)
       document.getElementById("menuProfile").addEventListener("click", () => openModal("#modalProfile"));
       document.getElementById("menuDiary").addEventListener("click", () => openModal("#modalDiary"));
       document.getElementById("menuTraining").addEventListener("click", () => openModal("#modalTraining"));
       document.getElementById("menuMind").addEventListener("click", () => openModal("#modalMind"));
 
-      // События на закрытие модальных окон (x)
+      // Закрыть модалку (крестик)
       document.querySelectorAll(".close-modal").forEach(btn => {
         btn.addEventListener("click", (e) => {
           const targetId = e.currentTarget.dataset.close;
@@ -643,7 +647,7 @@
       });
     });
 
-    // Генерация падающих звёзд
+    // Создание звёзд
     function createFallingStars(count) {
       const starsContainer = document.querySelector(".stars");
       for (let i = 0; i < count; i++) {
@@ -666,14 +670,14 @@
       }
     }
 
-    // Перемешиваем массив из 100, берём первые 20 и отображаем
-    function shuffleAndCreateCards() {
+    // Перемешать весь массив и взять N первых
+    function shuffleAndCreateCards(count) {
       const shuffled = [...cardsAll].sort(() => Math.random() - 0.5);
-      cardsData = shuffled.slice(0, 20);
+      cardsData = shuffled.slice(0, count);
       createSmallCards(cardsData);
     }
 
-    // Рисуем карточки (маленькие) на странице
+    // Создать маленькие карточки (все с одной и той же "рубашкой")
     function createSmallCards(dataArray) {
       const grid = document.querySelector(".cards-grid");
       grid.innerHTML = "";
@@ -685,9 +689,10 @@
         const smallCard = document.createElement("div");
         smallCard.classList.add("small-card");
 
+        // Рубашка (блондинка)
         const front = document.createElement("div");
         front.classList.add("small-card-front");
-        front.style.backgroundImage = `url("${item.frontImg}")`;
+        front.style.backgroundImage = `url("https://i.ibb.co/wcWxxGp/IMG-8462.webp")`;
 
         // Логотип
         const logo = document.createElement("div");
@@ -699,68 +704,67 @@
         container.appendChild(smallCard);
         grid.appendChild(container);
 
-        // Клик по карте => открыть оверлей
+        // Клик => открыть большую карту
         smallCard.addEventListener("click", () => {
-          openOverlay(item);
+          openOverlay(item.randomImg);
         });
       });
     }
 
-    // Открыть увеличенную карту (оверлей)
-    function openOverlay(cardData) {
+    // Открыть большую карту (overlay)
+    function openOverlay(randomImg) {
       const overlay = document.getElementById("overlay");
       overlay.classList.add("active");
 
-      // Скрываем кнопку перетасовки
-      const shuffleArrow = document.getElementById("shuffleArrow");
-      shuffleArrow.style.display = "none";
+      // Скрыть «Перетасувати»
+      const shuffleContainer = document.getElementById("shuffleContainer");
+      shuffleContainer.style.display = "none";
 
-      // Показываем стрелку назад
+      // Показать стрелку назад
       const backArrow = document.getElementById("backArrow");
       backArrow.style.display = "flex";
 
-      // Заполняем bigCard
+      // Задать фон передней стороны большой карты
       const bigCardFront = document.getElementById("bigCardFront");
-      bigCardFront.style.backgroundImage = `url("${cardData.frontImg}")`;
+      bigCardFront.style.backgroundImage = `url("${randomImg}")`;
 
-      // Сбрасываем переворот
+      // Сброс переворота
       const bigCard = document.getElementById("bigCard");
       bigCard.classList.remove("is-flipped");
     }
 
-    // Закрыть оверлей
+    // Закрыть большую карту
     function closeOverlay() {
       const overlay = document.getElementById("overlay");
       overlay.classList.remove("active");
 
-      // Показать кнопку перетасовки
-      const shuffleArrow = document.getElementById("shuffleArrow");
-      shuffleArrow.style.display = "flex";
+      // Показать «Перетасувати»
+      const shuffleContainer = document.getElementById("shuffleContainer");
+      shuffleContainer.style.display = "flex";
 
-      // Спрятать стрелку назад
+      // Скрыть стрелку назад
       const backArrow = document.getElementById("backArrow");
       backArrow.style.display = "none";
     }
 
-    // Обновить (перетасовать) колоду
-    function refreshCards() {
+    // Перетасовать и обновить сетку (с новой анимацией)
+    function refreshCards(count) {
       const grid = document.querySelector(".cards-grid");
       grid.classList.add("magic-refresh");
 
       setTimeout(() => {
-        shuffleAndCreateCards();
+        shuffleAndCreateCards(count);
         grid.classList.remove("magic-refresh");
-      }, 800);
+      }, 1000);
     }
 
-    // Открыть модалку
+    // Модалки (нижнее меню)
     function openModal(id) {
       const modal = document.querySelector(id);
       if(modal) {
         modal.classList.add("active");
       }
     }
-    // Закрыть модалку
     function closeModal(id) {
       const modal = document.querySelector(id);
       if(modal) {

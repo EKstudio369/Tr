@@ -1,422 +1,681 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="uk">
 <head>
-  <meta charset="UTF-8">
-  <title>Трейдинг-сигналы на 5-минутном графике (Локальное приложение)</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Магічна карта з бірюзовим підсвічуванням (Overlay)</title>
   
-  <!-- Библиотека для удобного парсинга CSV (PapaParse) -->
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  
-  <!-- Библиотека Plotly для построения графиков -->
-  <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
-  
+  <!-- Подключаем красивый курсивный шрифт -->
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+
   <style>
+    /* 
+      =======================================
+      ПРЕЛОАДЕР
+      =======================================
+    */
+    #preloader {
+      position: fixed;
+      top: 0; 
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: linear-gradient(135deg, #1e1e2f, #2c2c54);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 100000; /* поверх всего */
+      transition: opacity 0.5s ease;
+    }
+    #preloader.hide {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .preloader-content {
+      text-align: center;
+      color: #fff;
+      font-family: 'Great Vibes', cursive;
+      font-size: 2rem;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.5;
+      }
+      100% {
+        opacity: 1;
+      }
+    }
+
+    /*
+      =======================================
+      ОСНОВНЫЕ СТИЛИ СТРАНИЦЫ
+      =======================================
+    */
+    /* Убираем "белый блик" при нажатии + запрет на выделение */
+    body, .card, .card * {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none; 
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* Базовый стиль страницы */
     body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-    }
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    input[type="file"] {
-      margin-bottom: 10px;
-    }
-    #chart {
       width: 100%;
-      height: 600px;
+      height: 100vh;
+      overflow: hidden;
+      background: linear-gradient(135deg, #1e1e2f, #2c2c54);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      font-family: 'Great Vibes', cursive;
+      position: relative;
     }
-    table {
-      border-collapse: collapse;
-      margin-top: 10px;
+
+    /* Описание сайта вверху (добавлено) */
+    .site-description {
+      color: #fff;
+      text-align: center;
+      margin: 10px 0;
+      font-size: 1rem;
+      line-height: 1.4;
+      max-width: 90%;
     }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 6px;
+
+    /* Кнопка "Перетасувати" */
+    .shuffle-button {
+      margin: 10px;
+      padding: 8px 16px;
+      font-size: 1rem;
+      cursor: pointer;
+      background: #40E0D0;
+      border: none;
+      border-radius: 4px;
+      color: #1e1e2f;
+      font-weight: bold;
+      transition: background 0.3s;
     }
-    th {
-      background-color: #f7f7f7;
+    .shuffle-button:hover {
+      background: #33bdb6;
     }
-    .signal-long {
-      color: green;
+
+    /* Контейнер для падающих звёзд */
+    .stars {
+      position: absolute;
+      top: 0; 
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /*
+      =======================================
+      СЕТКА С МАЛЕНЬКИМИ КАРТАМИ
+      =======================================
+    */
+    .cards-grid {
+      position: relative;
+      z-index: 1; /* карты поверх звёзд */
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: flex-start;
+      max-width: 100%;
+      gap: 10px;
+      padding: 10px;
+    }
+
+    /* Контейнер под каждую маленькую карту */
+    .card-container {
+      width: 80px;
+      height: 112px; /* пропорция 3:4 */
+      perspective: 1000px;
+      position: relative;
+
+      /* Анимация всплытия при загрузке (появление) */
+      transform: scale(0);
+      animation: popIn 0.5s forwards ease;
+    }
+    /* Небольшая задержка для "ступенчатого" появления */
+    .card-container:nth-child(n) {
+      animation-delay: calc(0.05s * var(--i));
+    }
+
+    @keyframes popIn {
+      0% {
+        transform: scale(0);
+        opacity: 0;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    /* Маленькая карта (без переворота) */
+    .small-card {
+      width: 100%;
+      height: 100%;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+      border: 1px solid rgba(64,224,208,0.6);
+      box-shadow: 0 0 10px rgba(64,224,208,0.3);
+      transition: transform 0.2s;
+    }
+    .small-card:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 12px rgba(64,224,208,0.6);
+    }
+
+    .small-card-front {
+      background-size: cover;
+      background-position: center;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Подпись на маленькой карте (логотип) */
+    .small-card .logo {
+      position: absolute;
+      bottom: 3px;
+      right: 3px;
+      color: #fff;
+      font-size: 0.5rem;
+      text-shadow: 0 0 2px rgba(0,0,0,0.7);
+    }
+
+    /*
+      =======================================
+      ОВЕРЛЕЙ (БОЛЬШАЯ КАРТА)
+      =======================================
+    */
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.7);
+      display: none; /* скрыт по умолчанию */
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    /* Показываем оверлей, когда добавлен класс "active" */
+    .overlay.active {
+      display: flex;
+      opacity: 1;
+    }
+
+    /* Кнопка "назад" (закрыть) в левом верхнем углу экрана */
+    .back-button {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 10000;
+      background: #40E0D0;
+      border: none;
+      color: #1e1e2f;
+      font-size: 1rem;
+      cursor: pointer;
+      opacity: 0.9;
+      transition: opacity 0.2s, background 0.3s;
+      padding: 6px 12px;
+      border-radius: 4px;
       font-weight: bold;
     }
-    .signal-short {
-      color: red;
-      font-weight: bold;
+    .back-button:hover {
+      opacity: 1;
+      background: #33bdb6;
     }
+
+    /*
+      =======================================
+      БОЛЬШАЯ КАРТА (флип-анимация)
+      =======================================
+    */
+    .overlay-card-container {
+      width: 320px;  /* уменьшили размеры */
+      height: 448px; /* пропорция 3:4 */
+      perspective: 2000px; /* перспектива для переворота */
+      position: relative;
+
+      /* Анимация появления большой карты */
+      transform: translateY(20px) scale(0.8);
+      animation: zoomIn 0.5s forwards ease;
+    }
+    @keyframes zoomIn {
+      0% {
+        opacity: 0;
+        transform: translateY(20px) scale(0.8);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .big-card {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      border-radius: 12px;
+      transition: transform 0.8s cubic-bezier(0.4, 0.2, 0.2, 1);
+    }
+
+    /* Анимированное бирюзовое свечение по контуру */
+    .big-card::after {
+      content: "";
+      position: absolute;
+      top: -1px;
+      left: -1px;
+      right: -1px;
+      bottom: -1px;
+      border-radius: 12px;
+      pointer-events: none;
+      z-index: 2;
+      border: 2px solid rgba(64, 224, 208, 0.5);
+      box-shadow:
+        0 0 10px rgba(64, 224, 208, 0.6),
+        0 0 20px rgba(64, 224, 208, 0.4),
+        0 0 30px rgba(64, 224, 208, 0.2);
+      animation: borderGlow 3s infinite alternate;
+    }
+    @keyframes borderGlow {
+      0% {
+        box-shadow:
+          0 0 10px rgba(64, 224, 208, 0.6),
+          0 0 20px rgba(64, 224, 208, 0.4),
+          0 0 30px rgba(64, 224, 208, 0.2);
+      }
+      100% {
+        box-shadow:
+          0 0 20px rgba(64, 224, 208, 0.8),
+          0 0 40px rgba(64, 224, 208, 0.6),
+          0 0 60px rgba(64, 224, 208, 0.4);
+      }
+    }
+
+    .big-card.is-flipped {
+      transform: rotateY(180deg);
+    }
+
+    .big-card-face {
+      position: absolute;
+      top: 0; 
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      backface-visibility: hidden;
+    }
+
+    .big-card-front {
+      background-size: cover;
+      background-position: center;
+      position: relative;
+    }
+
+    .big-card-back {
+      background: #1b1b2d;
+      color: #40E0D0; 
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+      transform: rotateY(180deg);
+    }
+    .big-card-back h2 {
+      margin-bottom: 10px;
+      font-size: 1.3rem;
+    }
+    .big-card-back p {
+      font-size: 0.95rem;
+      line-height: 1.4;
+      margin: 0;
+    }
+
+    /*
+      =======================================
+      ПАДАЮЩИЕ ЗВЁЗДЫ
+      =======================================
+    */
+    .star {
+      position: absolute;
+      top: -5px;
+      left: 50%;
+      width: 2px;
+      height: 2px;
+      background: radial-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.2));
+      border-radius: 50%;
+      animation: fall linear infinite;
+    }
+    @keyframes fall {
+      to {
+        transform: translateY(110vh);
+      }
+    }
+
   </style>
 </head>
 <body>
-<div class="container">
-  <h2>Трейдинг-сигналы на 5-минутном графике (локальное приложение)</h2>
-  
-  <p>
-    Загрузите CSV-файл со столбцами <strong>Datetime, Open, High, Low, Close, Volume</strong>.  
-    Формат даты/времени должен корректно читаться (например: <em>2023-01-10 09:05:00</em>).
-  </p>
-  
-  <input type="file" id="fileInput" accept=".csv" />
-  <button id="loadButton">Загрузить данные</button>
-  
-  <div id="chart"></div>
-  
-  <h3>Последние сигналы</h3>
-  <table id="signalsTable">
-    <thead>
-      <tr>
-        <th>Дата/Время</th>
-        <th>Close</th>
-        <th>MACD</th>
-        <th>Signal</th>
-        <th>RSI</th>
-        <th>Сигнал</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
 
-<script>
-// ==========================
-// Функции для расчёта индикаторов (на JS)
-// ==========================
+  <!-- Прелоадер (3 сек) -->
+  <div id="preloader">
+    <div class="preloader-content">
+      Завантаження...
+    </div>
+  </div>
 
-/**
- * Рассчёт экспоненциального среднего (EMA).
- * @param {Array<number>} values - массив цен.
- * @param {number} period - период сглаживания.
- * @returns {Array<number>} массив значений EMA (той же длины, что и values).
- */
-function computeEMA(values, period) {
-  const emaValues = [];
-  let k = 2 / (period + 1);
-  
-  // Для начала возьмём первую EMA как простое среднее первых period (или начнём просто с первой цены)
-  let emaPrev = values[0];
-  emaValues[0] = emaPrev; // или NaN, но пусть будет так.
-  
-  for (let i = 1; i < values.length; i++) {
-    let price = values[i];
-    let emaCurrent = price * k + emaPrev * (1 - k);
-    emaValues[i] = emaCurrent;
-    emaPrev = emaCurrent;
-  }
-  return emaValues;
-}
+  <!-- Падающие звёзды -->
+  <div class="stars"></div>
 
-/**
- * Рассчёт MACD (Moving Average Convergence Divergence).
- * MACD = EMA(fast) - EMA(slow), затем Signal = EMA(MACD, signalPeriod).
- * @param {Array<number>} closePrices 
- * @param {number} fastPeriod 
- * @param {number} slowPeriod 
- * @param {number} signalPeriod 
- * @returns {Object} { macdLine: [], signalLine: [], hist: [] }
- */
-function computeMACD(closePrices, fastPeriod=12, slowPeriod=26, signalPeriod=9) {
-  const emaFast = computeEMA(closePrices, fastPeriod);
-  const emaSlow = computeEMA(closePrices, slowPeriod);
-  
-  const macdLine = closePrices.map((_, i) => emaFast[i] - emaSlow[i]);
-  const signalLine = computeEMA(macdLine, signalPeriod);
-  const hist = macdLine.map((val, i) => val - signalLine[i]);
-  
-  return { macdLine, signalLine, hist };
-}
+  <!-- Кнопка "назад" (закрыть оверлей) в левом верхнем углу -->
+  <button class="back-button" id="backButton" style="display:none;">Закрити</button>
 
-/**
- * Рассчёт RSI (Relative Strength Index).
- * Упрощённая формула: среднее положительных/отрицательных изменений за период.
- * @param {Array<number>} closePrices 
- * @param {number} period 
- * @returns {Array<number>} RSI (той же длины, что и closePrices).
- */
-function computeRSI(closePrices, period=14) {
-  let rsiArray = new Array(closePrices.length).fill(NaN);
+  <!-- Небольшое описание сайта (добавлено) -->
+  <div class="site-description">
+    Це демо-версія сайту з МАК-картами.<br>
+    Натисніть на будь-яку картку, щоб переглянути її в збільшеному форматі.
+  </div>
 
-  // Нужно будет считать изменения (diff)
-  let gains = new Array(closePrices.length).fill(0);
-  let losses = new Array(closePrices.length).fill(0);
+  <!-- Кнопка "Перетасувати" -->
+  <button class="shuffle-button" id="shuffleBtn">Перетасувати</button>
 
-  for (let i = 1; i < closePrices.length; i++) {
-    let change = closePrices[i] - closePrices[i - 1];
-    if (change > 0) {
-      gains[i] = change;
-      losses[i] = 0;
-    } else {
-      gains[i] = 0;
-      losses[i] = Math.abs(change);
+  <!-- Сетка с 20 маленькими картами -->
+  <div class="cards-grid"></div>
+
+  <!-- Оверлей с одной большой картой (скрытый по умолчанию) -->
+  <div class="overlay" id="overlay">
+    <div class="overlay-card-container">
+      <!-- Большая карта (флип) -->
+      <div class="big-card" id="bigCard">
+        <!-- Лицевая сторона большой карты -->
+        <div class="big-card-face big-card-front" id="bigCardFront"></div>
+        <!-- Оборотная сторона большой карты -->
+        <div class="big-card-face big-card-back">
+          <h2 id="bigCardTitle">Моя карта на день</h2>
+          <p id="bigCardDescription">
+            Опис картинки...
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // *******************************
+    // ДАННЫЕ ДЛЯ 20 КАРТОЧЕК (ссылки i.ibb.co)
+    // *******************************
+    const cardsData = [
+      {
+        frontImg: "https://i.ibb.co/TT7Wt3y/card1.jpg",
+        title: "Квітка надії",
+        description: "На зображенні тендітна квітка проростає крізь сніг, символізуючи надію та витривалість."
+      },
+      {
+        frontImg: "https://i.ibb.co/N37RRcS/card2.jpg",
+        title: "Мандрівник",
+        description: "Людина з рюкзаком серед гірських вершин, у пошуку натхнення та нових горизонтів."
+      },
+      {
+        frontImg: "https://i.ibb.co/k0v9wbn/card3.jpg",
+        title: "Вільний птах",
+        description: "Птах летить над хмарами, уособлює свободу вибору та духовне зростання."
+      },
+      {
+        frontImg: "https://i.ibb.co/GkqTqg6/card4.jpg",
+        title: "Дорога в майбутнє",
+        description: "Безкінечний шлях на заході сонця, що символізує життя як подорож з багатьма можливостями."
+      },
+      {
+        frontImg: "https://i.ibb.co/NVNh7c0/card5.jpg",
+        title: "Обійми",
+        description: "На малюнку двоє людей, що обіймаються, даруючи одне одному підтримку і тепло."
+      },
+      {
+        frontImg: "https://i.ibb.co/4YVyRv7/card6.jpg",
+        title: "Кольоровий світ",
+        description: "Абстрактне зображення різнобарвних плям, що говорять про емоції та творчість."
+      },
+      {
+        frontImg: "https://i.ibb.co/BLQ4pTk/card7.jpg",
+        title: "Сила води",
+        description: "Могутній водоспад, який символізує чистоту, рух і постійні зміни в житті."
+      },
+      {
+        frontImg: "https://i.ibb.co/nshY8zL/card8.jpg",
+        title: "Політ фантазії",
+        description: "Метелик, що летить крізь зоряне небо, викликаючи асоціації з мріями та натхненням."
+      },
+      {
+        frontImg: "https://i.ibb.co/fCGbrg6/card9.jpg",
+        title: "Місце сили",
+        description: "Старе дерево з могутнім стовбуром, яке дає відчуття захищеності та мудрості."
+      },
+      {
+        frontImg: "https://i.ibb.co/CQtbpq9/card10.jpg",
+        title: "Світло в пітьмі",
+        description: "Свічка, що горить у темряві, нагадує про те, що надія завжди є."
+      },
+      {
+        frontImg: "https://i.ibb.co/qnmdPTn/card11.jpg",
+        title: "Розквіт",
+        description: "Гілка з квітами сакури, що показує красу у моменті та швидкоплинність часу."
+      },
+      {
+        frontImg: "https://i.ibb.co/YWvynZm/card12.jpg",
+        title: "Зустріч світанку",
+        description: "Силует людини на березі моря у перших променях сонця, закликає до нового початку."
+      },
+      {
+        frontImg: "https://i.ibb.co/CsDrQYP/card13.jpg",
+        title: "Дотик",
+        description: "Рука, що тягнеться до листка, символізує зв'язок людини і природи."
+      },
+      {
+        frontImg: "https://i.ibb.co/dM9HWd5/card14.jpg",
+        title: "Магія музики",
+        description: "Скрипка серед лісу, звук якої відгукується у серці кожного, хто слухає."
+      },
+      {
+        frontImg: "https://i.ibb.co/jGy7CkP/card15.jpg",
+        title: "Райдуга емоцій",
+        description: "Райдуга після дощу - свідчення того, що після складнощів завжди приходить полегшення."
+      },
+      {
+        frontImg: "https://i.ibb.co/CpmFvDC/card16.jpg",
+        title: "Усмішка долі",
+        description: "Сонце, яке проглядає крізь хмари, наче усмішка небес, що дарує віру в краще."
+      },
+      {
+        frontImg: "https://i.ibb.co/nPw9LxC/card17.jpg",
+        title: "У колі часу",
+        description: "Старовинний годинник, що нагадує про цінність кожної миті в житті."
+      },
+      {
+        frontImg: "https://i.ibb.co/5Mthn3T/card18.jpg",
+        title: "Дзеркало душі",
+        description: "Озеро з кришталево-чистою водою, у якому відбиваються гори та небо."
+      },
+      {
+        frontImg: "https://i.ibb.co/278D3zT/card19.jpg",
+        title: "Сила слова",
+        description: "Відкрита книга, сторінки якої наповнені історіями та мудрістю поколінь."
+      },
+      {
+        frontImg: "https://i.ibb.co/r5c3Bns/card20.jpg",
+        title: "Захований скарб",
+        description: "Скринька зі світлом всередині, яка зберігає найцінніше - наші мрії та прагнення."
+      }
+    ];
+
+    /**
+     * При загрузке:
+     * 1) Запускаем прелоадер на 3 секунды
+     * 2) Создаём звёзды
+     * 3) Создаём маленькие карты
+     * 4) Навешиваем события
+     */
+    document.addEventListener("DOMContentLoaded", () => {
+      // Прелоадер
+      setTimeout(() => {
+        const preloader = document.getElementById('preloader');
+        preloader.classList.add('hide');
+        setTimeout(() => preloader.style.display = 'none', 500);
+      }, 3000);
+
+      createFallingStars(40);
+      createSmallCards(cardsData);
+
+      const backButton = document.getElementById("backButton");
+      backButton.addEventListener("click", closeOverlay);
+
+      // Переворот большой карты по клику
+      const bigCard = document.getElementById("bigCard");
+      bigCard.addEventListener("click", function() {
+        this.classList.toggle("is-flipped");
+      });
+
+      // Кнопка "Перетасувати"
+      const shuffleBtn = document.getElementById("shuffleBtn");
+      shuffleBtn.addEventListener("click", shuffleCards);
+    });
+
+    /**
+     * Генерация падающих звёзд
+     */
+    function createFallingStars(count) {
+      const starsContainer = document.querySelector(".stars");
+      for (let i = 0; i < count; i++) {
+        const star = document.createElement("div");
+        star.className = "star";
+        
+        const size = Math.random() * 2 + 1;
+        star.style.width = size + "px";
+        star.style.height = size + "px";
+        
+        star.style.left = Math.random() * 100 + "%";
+        
+        const duration = 4 + Math.random() * 5;
+        star.style.animationDuration = duration + "s";
+        
+        const delay = Math.random() * 5;
+        star.style.animationDelay = delay + "s";
+
+        starsContainer.appendChild(star);
+      }
     }
-  }
 
-  // Первое "скользящее" среднее
-  let avgGain = 0, avgLoss = 0;
-  // Для простоты возьмём среднее за первые `period` значений (с 1 до period включительно)
-  for (let i = 1; i <= period; i++) {
-    avgGain += gains[i];
-    avgLoss += losses[i];
-  }
-  avgGain /= period;
-  avgLoss /= period;
+    /**
+     * Создаёт карточки на основе массива данных
+     */
+    function createSmallCards(dataArray) {
+      const grid = document.querySelector(".cards-grid");
+      grid.innerHTML = ""; // очистка перед генерацией
+      dataArray.forEach((item, i) => {
+        const container = document.createElement("div");
+        container.classList.add("card-container");
+        container.style.setProperty("--i", i);
 
-  rsiArray[period] = calcRSI(avgGain, avgLoss);
+        // Маленькая карта
+        const smallCard = document.createElement("div");
+        smallCard.classList.add("small-card");
 
-  // Далее двигаемся по массиву
-  for (let i = period + 1; i < closePrices.length; i++) {
-    // Сглаживание, похожее на EMA
-    avgGain = (avgGain * (period - 1) + gains[i]) / period;
-    avgLoss = (avgLoss * (period - 1) + losses[i]) / period;
-    rsiArray[i] = calcRSI(avgGain, avgLoss);
-  }
+        // Лицевая сторона (фон)
+        const front = document.createElement("div");
+        front.classList.add("small-card-front");
+        front.style.backgroundImage = `url("${item.frontImg}")`;
 
-  return rsiArray;
+        // Подпись (логотип)
+        const logo = document.createElement("div");
+        logo.classList.add("logo");
+        logo.textContent = "by Iryna Kolokolova";
+        front.appendChild(logo);
 
-  function calcRSI(gain, loss) {
-    if (loss === 0) {
-      return 100;
-    }
-    let rs = gain / loss;
-    return 100 - (100 / (1 + rs));
-  }
-}
+        // Собираем
+        smallCard.appendChild(front);
+        container.appendChild(smallCard);
+        grid.appendChild(container);
 
-/**
- * Функция генерации сигналов
- * Возвращает массив сигналов (1 = лонг, -1 = шорт, 0 = нет сигнала)
- * Логика:
- * - Лонг при пересечении MACD и Signal снизу вверх, RSI < 50, цена > EMA
- * - Шорт при пересечении MACD и Signal сверху вниз, RSI > 50, цена < EMA
- */
-function generateSignals(data) {
-  // data: массив объектов { datetime, open, high, low, close, volume, ... }
-  const signals = new Array(data.length).fill(0);
-
-  for (let i = 1; i < data.length; i++) {
-    const prev = data[i-1];
-    const cur = data[i];
-
-    // Проверяем пересечение MACD/Signal
-    // (MACD > Signal сейчас) AND (MACD <= Signal раньше) => пересечение снизу вверх
-    let crossedUp = (cur.macd > cur.macdSignal) && (prev.macd <= prev.macdSignal);
-    let crossedDown = (cur.macd < cur.macdSignal) && (prev.macd >= prev.macdSignal);
-
-    // Условие Лонг
-    if (crossedUp && cur.rsi < 50 && cur.close > cur.ema20) {
-      signals[i] = 1;
-    }
-    // Условие Шорт
-    else if (crossedDown && cur.rsi > 50 && cur.close < cur.ema20) {
-      signals[i] = -1;
-    }
-  }
-  return signals;
-}
-
-// ==========================
-// Основная логика
-// ==========================
-
-document.getElementById('loadButton').addEventListener('click', () => {
-  const fileInput = document.getElementById('fileInput');
-  if (!fileInput.files || fileInput.files.length === 0) {
-    alert('Пожалуйста, выберите CSV-файл!');
-    return;
-  }
-
-  const file = fileInput.files[0];
-  Papa.parse(file, {
-    header: true,
-    skipEmptyLines: true,
-    complete: function(results) {
-      // results.data - это массив объектов, где ключи = названия колонок
-      const rawData = results.data;
-      // Преобразуем строки в числовые типы и пр.
-      let preparedData = [];
-      
-      for (let row of rawData) {
-        // Иногда в CSV могут быть пустые поля или неточные данные. Проверим:
-        if (!row.Datetime || !row.Close || !row.Open) {
-          continue;
-        }
-        let dateTimeStr = row.Datetime.trim();
-        let openVal = parseFloat(row.Open);
-        let highVal = parseFloat(row.High);
-        let lowVal = parseFloat(row.Low);
-        let closeVal = parseFloat(row.Close);
-        let volumeVal = parseFloat(row.Volume);
-
-        // Проверим, всё ли нормально сконвертировалось
-        if (isNaN(openVal) || isNaN(highVal) || isNaN(lowVal) || isNaN(closeVal) || isNaN(volumeVal)) {
-          continue;
-        }
-
-        preparedData.push({
-          datetime: dateTimeStr,
-          open: openVal,
-          high: highVal,
-          low: lowVal,
-          close: closeVal,
-          volume: volumeVal
+        // На клик — открыть оверлей с большой картой
+        smallCard.addEventListener("click", () => {
+          openOverlay(item);
         });
-      }
-
-      if (preparedData.length === 0) {
-        alert("Нет валидных данных в CSV!");
-        return;
-      }
-
-      // Сортируем по дате (на всякий случай), если CSV не отсортирован
-      preparedData.sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
-
-      // Выделим массив close-цен для вычисления индикаторов
-      const closeArray = preparedData.map(d => d.close);
-
-      // 1) EMA(20)
-      const ema20 = computeEMA(closeArray, 20);
-      // 2) MACD
-      const { macdLine, signalLine } = computeMACD(closeArray);
-      // 3) RSI(14)
-      const rsi14 = computeRSI(closeArray, 14);
-
-      // Запишем результаты обратно
-      for (let i = 0; i < preparedData.length; i++) {
-        preparedData[i].ema20 = ema20[i];
-        preparedData[i].macd = macdLine[i];
-        preparedData[i].macdSignal = signalLine[i];
-        preparedData[i].rsi = rsi14[i];
-      }
-
-      // Генерируем сигналы
-      const signals = generateSignals(preparedData);
-      for (let i = 0; i < preparedData.length; i++) {
-        preparedData[i].signal = signals[i];
-      }
-
-      // Рисуем график
-      plotChart(preparedData);
-
-      // Показываем последние сигналы в таблице
-      renderSignalsTable(preparedData, 20); // последние 20 строк
+      });
     }
-  });
-});
 
-/**
- * Функция для отображения графика (цена + сигналы).
- * @param {Array<Object>} data 
- */
-function plotChart(data) {
-  // Подготовим массивы для Plotly
-  const xValues = data.map(d => d.datetime);
-  const closeValues = data.map(d => d.close);
-  const ema20Values = data.map(d => d.ema20);
+    /**
+     * Открыть оверлей (показать большую карту)
+     */
+    function openOverlay(cardData) {
+      const overlay = document.getElementById("overlay");
+      overlay.classList.add("active");
 
-  // Точки входа/выхода (сигналы)
-  // Покажем их отдельными trace, где X - только те точки, где signal != 0
-  const longEntries = data
-    .filter(d => d.signal === 1)
-    .map(d => ({ x: d.datetime, y: d.close }));
-  
-  const shortEntries = data
-    .filter(d => d.signal === -1)
-    .map(d => ({ x: d.datetime, y: d.close }));
+      const backButton = document.getElementById("backButton");
+      backButton.style.display = "block";
 
-  const tracePrice = {
-    x: xValues,
-    y: closeValues,
-    mode: 'lines',
-    name: 'Close Price',
-    line: { color: 'blue' }
-  };
+      // Наполняем большую карту данными
+      const bigCardFront = document.getElementById("bigCardFront");
+      const bigCardTitle = document.getElementById("bigCardTitle");
+      const bigCardDescription = document.getElementById("bigCardDescription");
 
-  const traceEMA = {
-    x: xValues,
-    y: ema20Values,
-    mode: 'lines',
-    name: 'EMA(20)',
-    line: { color: 'orange' }
-  };
+      bigCardFront.style.backgroundImage = `url("${cardData.frontImg}")`;
+      bigCardTitle.textContent = cardData.title;
+      bigCardDescription.textContent = cardData.description;
 
-  const traceLong = {
-    x: longEntries.map(p => p.x),
-    y: longEntries.map(p => p.y),
-    mode: 'markers',
-    name: 'Long Signal',
-    marker: { color: 'green', symbol: 'triangle-up', size: 8 }
-  };
-
-  const traceShort = {
-    x: shortEntries.map(p => p.x),
-    y: shortEntries.map(p => p.y),
-    mode: 'markers',
-    name: 'Short Signal',
-    marker: { color: 'red', symbol: 'triangle-down', size: 8 }
-  };
-
-  const layout = {
-    title: 'График цены и сигналы',
-    xaxis: { title: 'Дата/Время' },
-    yaxis: { title: 'Цена' }
-  };
-
-  Plotly.newPlot('chart', [tracePrice, traceEMA, traceLong, traceShort], layout);
-}
-
-/**
- * Функция для отображения последних N сигналов в таблице.
- */
-function renderSignalsTable(data, lastN=20) {
-  const tableBody = document.querySelector('#signalsTable tbody');
-  tableBody.innerHTML = ''; // очистим
-
-  // Возьмём последние N строк
-  const sliceData = data.slice(-lastN);
-
-  for (let row of sliceData) {
-    const tr = document.createElement('tr');
-
-    // Дата/время
-    const tdDate = document.createElement('td');
-    tdDate.textContent = row.datetime;
-    tr.appendChild(tdDate);
-
-    // Close
-    const tdClose = document.createElement('td');
-    tdClose.textContent = row.close.toFixed(4);
-    tr.appendChild(tdClose);
-
-    // MACD
-    const tdMacd = document.createElement('td');
-    tdMacd.textContent = (row.macd !== undefined) ? row.macd.toFixed(4) : '';
-    tr.appendChild(tdMacd);
-
-    // Signal
-    const tdMacdSignal = document.createElement('td');
-    tdMacdSignal.textContent = (row.macdSignal !== undefined) ? row.macdSignal.toFixed(4) : '';
-    tr.appendChild(tdMacdSignal);
-
-    // RSI
-    const tdRsi = document.createElement('td');
-    tdRsi.textContent = (row.rsi !== undefined) ? row.rsi.toFixed(2) : '';
-    tr.appendChild(tdRsi);
-
-    // Сигнал (1 = Лонг, -1 = Шорт, 0 = нет)
-    const tdSignal = document.createElement('td');
-    if (row.signal === 1) {
-      tdSignal.textContent = 'Лонг';
-      tdSignal.classList.add('signal-long');
-    } else if (row.signal === -1) {
-      tdSignal.textContent = 'Шорт';
-      tdSignal.classList.add('signal-short');
-    } else {
-      tdSignal.textContent = '-';
+      // Сброс "is-flipped"
+      const bigCard = document.getElementById("bigCard");
+      bigCard.classList.remove("is-flipped");
     }
-    tr.appendChild(tdSignal);
 
-    tableBody.appendChild(tr);
-  }
-}
-</script>
+    /**
+     * Закрыть оверлей (вернуться к маленьким картам)
+     */
+    function closeOverlay() {
+      const overlay = document.getElementById("overlay");
+      overlay.classList.remove("active");
+
+      const backButton = document.getElementById("backButton");
+      backButton.style.display = "none";
+    }
+
+    /**
+     * Перемешивание карт (анимация)
+     */
+    function shuffleCards() {
+      // Перемешаем массив cardsData
+      const shuffled = [...cardsData].sort(() => Math.random() - 0.5);
+
+      // Дополнительно можно добавить класс анимации на grid (или на каждую карту)
+      const grid = document.querySelector(".cards-grid");
+      grid.classList.add("shuffle-animation");
+
+      // Через небольшой таймаут заново создаём карточки
+      setTimeout(() => {
+        createSmallCards(shuffled);
+        grid.classList.remove("shuffle-animation");
+      }, 300); // 300 мс — время условной "тряски", на ваше усмотрение
+    }
+  </script>
 </body>
 </html>

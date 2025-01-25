@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Магічна карта з бірюзовим підсвічуванням (Overlay)</title>
+  <title>МАК-Карти — Автор: Колоколова Ірина</title>
   
-  <!-- Подключаем красивый курсивный шрифт -->
+  <!-- Красивая рукописная типографика -->
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
 
@@ -25,7 +25,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      z-index: 100000; /* поверх всего */
+      z-index: 100000; 
       transition: opacity 0.5s ease;
     }
     #preloader.hide {
@@ -56,16 +56,11 @@
       ОСНОВНЫЕ СТИЛИ СТРАНИЦЫ
       =======================================
     */
-    /* Убираем "белый блик" при нажатии + запрет на выделение */
-    body, .card, .card * {
-      -webkit-tap-highlight-color: transparent;
-      user-select: none; 
+    * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-
-    /* Базовый стиль страницы */
     body {
       width: 100%;
       height: 100vh;
@@ -77,33 +72,74 @@
       justify-content: flex-start;
       font-family: 'Great Vibes', cursive;
       position: relative;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
     }
 
-    /* Описание сайта вверху (добавлено) */
+    /* Верхнее описание сайта */
     .site-description {
       color: #fff;
       text-align: center;
-      margin: 10px 0;
+      margin-top: 10px;
       font-size: 1rem;
       line-height: 1.4;
       max-width: 90%;
+      z-index: 2;
     }
 
-    /* Кнопка "Перетасувати" */
-    .shuffle-button {
-      margin: 10px;
-      padding: 8px 16px;
-      font-size: 1rem;
+    /*
+      =======================================
+      КНОПКА СТРЕЛОЧКА НАЗАД (вместо "Закрити")
+      =======================================
+    */
+    .back-arrow {
+      display: none; /* скрыта по умолчанию */
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 10000;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(64,224,208,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
-      background: #40E0D0;
-      border: none;
-      border-radius: 4px;
-      color: #1e1e2f;
-      font-weight: bold;
-      transition: background 0.3s;
+      font-size: 1rem;
+      color: #40E0D0;
+      transition: background 0.3s, transform 0.3s;
     }
-    .shuffle-button:hover {
-      background: #33bdb6;
+    .back-arrow:hover {
+      background: rgba(64,224,208,0.4);
+      transform: scale(1.05);
+    }
+
+    /*
+      =======================================
+      КНОПКА СТРЕЛОЧКА ДЛЯ ПЕРЕТАСОВКИ (↻)
+      =======================================
+    */
+    .shuffle-arrow {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 10000;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(64,224,208,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: #40E0D0;
+      transition: background 0.3s, transform 0.3s;
+    }
+    .shuffle-arrow:hover {
+      background: rgba(64,224,208,0.4);
+      transform: rotate(25deg);
     }
 
     /* Контейнер для падающих звёзд */
@@ -125,14 +161,15 @@
     */
     .cards-grid {
       position: relative;
-      z-index: 1; /* карты поверх звёзд */
+      z-index: 1; 
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
       align-items: flex-start;
       max-width: 100%;
       gap: 10px;
-      padding: 10px;
+      padding: 20px;
+      margin-top: 20px; /* немного ниже */
     }
 
     /* Контейнер под каждую маленькую карту */
@@ -148,9 +185,8 @@
     }
     /* Небольшая задержка для "ступенчатого" появления */
     .card-container:nth-child(n) {
-      animation-delay: calc(0.05s * var(--i));
+      animation-delay: calc(0.04s * var(--i));
     }
-
     @keyframes popIn {
       0% {
         transform: scale(0);
@@ -162,7 +198,7 @@
       }
     }
 
-    /* Маленькая карта (без переворота) */
+    /* Маленькая карта */
     .small-card {
       width: 100%;
       height: 100%;
@@ -215,46 +251,16 @@
       opacity: 0;
       transition: opacity 0.4s ease;
     }
-    /* Показываем оверлей, когда добавлен класс "active" */
     .overlay.active {
       display: flex;
       opacity: 1;
     }
 
-    /* Кнопка "назад" (закрыть) в левом верхнем углу экрана */
-    .back-button {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      z-index: 10000;
-      background: #40E0D0;
-      border: none;
-      color: #1e1e2f;
-      font-size: 1rem;
-      cursor: pointer;
-      opacity: 0.9;
-      transition: opacity 0.2s, background 0.3s;
-      padding: 6px 12px;
-      border-radius: 4px;
-      font-weight: bold;
-    }
-    .back-button:hover {
-      opacity: 1;
-      background: #33bdb6;
-    }
-
-    /*
-      =======================================
-      БОЛЬШАЯ КАРТА (флип-анимация)
-      =======================================
-    */
     .overlay-card-container {
-      width: 320px;  /* уменьшили размеры */
+      width: 320px;  /* размеры большой карты */
       height: 448px; /* пропорция 3:4 */
-      perspective: 2000px; /* перспектива для переворота */
+      perspective: 2000px;
       position: relative;
-
-      /* Анимация появления большой карты */
       transform: translateY(20px) scale(0.8);
       animation: zoomIn 0.5s forwards ease;
     }
@@ -278,7 +284,7 @@
       transition: transform 0.8s cubic-bezier(0.4, 0.2, 0.2, 1);
     }
 
-    /* Анимированное бирюзовое свечение по контуру */
+    /* Свечение */
     .big-card::after {
       content: "";
       position: absolute;
@@ -329,18 +335,16 @@
     .big-card-front {
       background-size: cover;
       background-position: center;
-      position: relative;
     }
 
     .big-card-back {
       background: #1b1b2d;
-      color: #40E0D0; 
+      color: #40E0D0;
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
-      padding: 20px;
-      box-sizing: border-box;
+      justify-content: center;
+      padding: 15px;
       text-align: center;
       transform: rotateY(180deg);
     }
@@ -349,9 +353,9 @@
       font-size: 1.3rem;
     }
     .big-card-back p {
-      font-size: 0.95rem;
+      font-size: 1rem;
       line-height: 1.4;
-      margin: 0;
+      margin: 0 0 10px 0;
     }
 
     /*
@@ -375,11 +379,129 @@
       }
     }
 
+    /*
+      =====================================
+      АНИМАЦИЯ ПРИ ПЕРЕТАСОВКЕ
+      =====================================
+    */
+    .magic-refresh {
+      animation: magicRefresh 0.8s forwards ease;
+    }
+    @keyframes magicRefresh {
+      0% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+      }
+      25% {
+        transform: scale(0.7) rotate(120deg);
+        opacity: 0.9;
+      }
+      50% {
+        transform: scale(1) rotate(240deg);
+        opacity: 0.9;
+      }
+      75% {
+        transform: scale(0.85) rotate(360deg);
+        opacity: 0.85;
+      }
+      100% {
+        transform: scale(1) rotate(720deg);
+        opacity: 1;
+      }
+    }
+
+    /*
+      =====================================
+      НИЖНЕЕ МЕНЮ (ИКОНОЧКИ)
+      =====================================
+    */
+    .bottom-menu {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 60px;
+      background: rgba(0, 0, 0, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      z-index: 2;
+      backdrop-filter: blur(4px);
+    }
+    .bottom-menu .menu-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(64,224,208,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      color: #40E0D0;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .bottom-menu .menu-icon:hover {
+      background: rgba(64,224,208,0.4);
+      transform: scale(1.1);
+    }
+
+    /* Модальные окошки для каждого пункта нижнего меню */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 99999;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .modal-overlay.active {
+      display: flex;
+      opacity: 1;
+    }
+    .modal-window {
+      background: #1b1b2d;
+      border: 1px solid rgba(64,224,208,0.4);
+      border-radius: 12px;
+      max-width: 300px;
+      width: 90%;
+      padding: 20px;
+      text-align: center;
+      color: #40E0D0;
+      position: relative;
+    }
+    .modal-window h3 {
+      margin-bottom: 10px;
+      font-size: 1.3rem;
+    }
+    .modal-window p {
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+    .close-modal {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      cursor: pointer;
+      color: #40E0D0;
+      font-size: 1.2rem;
+      transition: transform 0.2s;
+    }
+    .close-modal:hover {
+      transform: scale(1.1);
+    }
+
   </style>
 </head>
+
 <body>
 
-  <!-- Прелоадер (3 сек) -->
+  <!-- Прелоадер -->
   <div id="preloader">
     <div class="preloader-content">
       Завантаження...
@@ -389,181 +511,139 @@
   <!-- Падающие звёзды -->
   <div class="stars"></div>
 
-  <!-- Кнопка "назад" (закрыть оверлей) в левом верхнем углу -->
-  <button class="back-button" id="backButton" style="display:none;">Закрити</button>
+  <!-- Иконка стрелочка (назад) скрыта по умолчанию -->
+  <div class="back-arrow" id="backArrow">←</div>
 
-  <!-- Небольшое описание сайта (добавлено) -->
+  <!-- Иконка стрелочка (перетасовать) -->
+  <div class="shuffle-arrow" id="shuffleArrow">↻</div>
+
+  <!-- Описание сайта -->
   <div class="site-description">
-    Це демо-версія сайту з МАК-картами.<br>
-    Натисніть на будь-яку картку, щоб переглянути її в збільшеному форматі.
+    Метафоричні асоціативні карти (МАК) — це чудовий психологічний інструмент.<br>
+    Автор та психолог-консультант: Колоколова Ірина.<br>
+    Оберіть будь-яку картку та перегляньте її у збільшеному вигляді!
   </div>
 
-  <!-- Кнопка "Перетасувати" -->
-  <button class="shuffle-button" id="shuffleBtn">Перетасувати</button>
-
-  <!-- Сетка с 20 маленькими картами -->
+  <!-- Сетка карт (20 из 100) -->
   <div class="cards-grid"></div>
 
-  <!-- Оверлей с одной большой картой (скрытый по умолчанию) -->
+  <!-- НИЖНЕЕ МЕНЮ с иконками -->
+  <div class="bottom-menu">
+    <div class="menu-icon" id="menuProfile">Профіль</div>
+    <div class="menu-icon" id="menuDiary">Щоденник</div>
+    <div class="menu-icon" id="menuTraining">Тренінги</div>
+    <div class="menu-icon" id="menuMind">Розвиток</div>
+  </div>
+
+  <!-- Оверлей (увеличенная карта) -->
   <div class="overlay" id="overlay">
     <div class="overlay-card-container">
-      <!-- Большая карта (флип) -->
       <div class="big-card" id="bigCard">
-        <!-- Лицевая сторона большой карты -->
+        <!-- Лицевая сторона -->
         <div class="big-card-face big-card-front" id="bigCardFront"></div>
-        <!-- Оборотная сторона большой карты -->
+        <!-- Задняя сторона -->
         <div class="big-card-face big-card-back">
-          <h2 id="bigCardTitle">Моя карта на день</h2>
-          <p id="bigCardDescription">
-            Опис картинки...
-          </p>
+          <h2>МАК-Карта</h2>
+          <p>Абстрактний образ із глибоким змістом...</p>
         </div>
       </div>
     </div>
   </div>
 
-  <script>
-    // *******************************
-    // ДАННЫЕ ДЛЯ 20 КАРТОЧЕК (ссылки i.ibb.co)
-    // *******************************
-    const cardsData = [
-      {
-        frontImg: "https://i.ibb.co/TT7Wt3y/card1.jpg",
-        title: "Квітка надії",
-        description: "На зображенні тендітна квітка проростає крізь сніг, символізуючи надію та витривалість."
-      },
-      {
-        frontImg: "https://i.ibb.co/N37RRcS/card2.jpg",
-        title: "Мандрівник",
-        description: "Людина з рюкзаком серед гірських вершин, у пошуку натхнення та нових горизонтів."
-      },
-      {
-        frontImg: "https://i.ibb.co/k0v9wbn/card3.jpg",
-        title: "Вільний птах",
-        description: "Птах летить над хмарами, уособлює свободу вибору та духовне зростання."
-      },
-      {
-        frontImg: "https://i.ibb.co/GkqTqg6/card4.jpg",
-        title: "Дорога в майбутнє",
-        description: "Безкінечний шлях на заході сонця, що символізує життя як подорож з багатьма можливостями."
-      },
-      {
-        frontImg: "https://i.ibb.co/NVNh7c0/card5.jpg",
-        title: "Обійми",
-        description: "На малюнку двоє людей, що обіймаються, даруючи одне одному підтримку і тепло."
-      },
-      {
-        frontImg: "https://i.ibb.co/4YVyRv7/card6.jpg",
-        title: "Кольоровий світ",
-        description: "Абстрактне зображення різнобарвних плям, що говорять про емоції та творчість."
-      },
-      {
-        frontImg: "https://i.ibb.co/BLQ4pTk/card7.jpg",
-        title: "Сила води",
-        description: "Могутній водоспад, який символізує чистоту, рух і постійні зміни в житті."
-      },
-      {
-        frontImg: "https://i.ibb.co/nshY8zL/card8.jpg",
-        title: "Політ фантазії",
-        description: "Метелик, що летить крізь зоряне небо, викликаючи асоціації з мріями та натхненням."
-      },
-      {
-        frontImg: "https://i.ibb.co/fCGbrg6/card9.jpg",
-        title: "Місце сили",
-        description: "Старе дерево з могутнім стовбуром, яке дає відчуття захищеності та мудрості."
-      },
-      {
-        frontImg: "https://i.ibb.co/CQtbpq9/card10.jpg",
-        title: "Світло в пітьмі",
-        description: "Свічка, що горить у темряві, нагадує про те, що надія завжди є."
-      },
-      {
-        frontImg: "https://i.ibb.co/qnmdPTn/card11.jpg",
-        title: "Розквіт",
-        description: "Гілка з квітами сакури, що показує красу у моменті та швидкоплинність часу."
-      },
-      {
-        frontImg: "https://i.ibb.co/YWvynZm/card12.jpg",
-        title: "Зустріч світанку",
-        description: "Силует людини на березі моря у перших променях сонця, закликає до нового початку."
-      },
-      {
-        frontImg: "https://i.ibb.co/CsDrQYP/card13.jpg",
-        title: "Дотик",
-        description: "Рука, що тягнеться до листка, символізує зв'язок людини і природи."
-      },
-      {
-        frontImg: "https://i.ibb.co/dM9HWd5/card14.jpg",
-        title: "Магія музики",
-        description: "Скрипка серед лісу, звук якої відгукується у серці кожного, хто слухає."
-      },
-      {
-        frontImg: "https://i.ibb.co/jGy7CkP/card15.jpg",
-        title: "Райдуга емоцій",
-        description: "Райдуга після дощу - свідчення того, що після складнощів завжди приходить полегшення."
-      },
-      {
-        frontImg: "https://i.ibb.co/CpmFvDC/card16.jpg",
-        title: "Усмішка долі",
-        description: "Сонце, яке проглядає крізь хмари, наче усмішка небес, що дарує віру в краще."
-      },
-      {
-        frontImg: "https://i.ibb.co/nPw9LxC/card17.jpg",
-        title: "У колі часу",
-        description: "Старовинний годинник, що нагадує про цінність кожної миті в житті."
-      },
-      {
-        frontImg: "https://i.ibb.co/5Mthn3T/card18.jpg",
-        title: "Дзеркало душі",
-        description: "Озеро з кришталево-чистою водою, у якому відбиваються гори та небо."
-      },
-      {
-        frontImg: "https://i.ibb.co/278D3zT/card19.jpg",
-        title: "Сила слова",
-        description: "Відкрита книга, сторінки якої наповнені історіями та мудрістю поколінь."
-      },
-      {
-        frontImg: "https://i.ibb.co/r5c3Bns/card20.jpg",
-        title: "Захований скарб",
-        description: "Скринька зі світлом всередині, яка зберігає найцінніше - наші мрії та прагнення."
-      }
-    ];
+  <!-- Модальные окна (4 штуки) -->
+  <div class="modal-overlay" id="modalProfile">
+    <div class="modal-window">
+      <div class="close-modal" data-close="#modalProfile">×</div>
+      <h3>Профіль</h3>
+      <p>Тут буде інформація про ваш профіль, налаштування та інші деталі.</p>
+    </div>
+  </div>
+  <div class="modal-overlay" id="modalDiary">
+    <div class="modal-window">
+      <div class="close-modal" data-close="#modalDiary">×</div>
+      <h3>Щоденник</h3>
+      <p>Тут ви можете вести особисті нотатки, зберігати важливі спогади та відкриття.</p>
+    </div>
+  </div>
+  <div class="modal-overlay" id="modalTraining">
+    <div class="modal-window">
+      <div class="close-modal" data-close="#modalTraining">×</div>
+      <h3>Тренінги</h3>
+      <p>Корисні матеріали, практики та курси для особистісного зростання та розвитку.</p>
+    </div>
+  </div>
+  <div class="modal-overlay" id="modalMind">
+    <div class="modal-window">
+      <div class="close-modal" data-close="#modalMind">×</div>
+      <h3>Саморозвиток</h3>
+      <p>Інструменти, поради та завдання для глибшого розуміння себе та роботи над собою.</p>
+    </div>
+  </div>
 
-    /**
-     * При загрузке:
-     * 1) Запускаем прелоадер на 3 секунды
-     * 2) Создаём звёзды
-     * 3) Создаём маленькие карты
-     * 4) Навешиваем события
-     */
+  <script>
+    // ==================================
+    // ПРЕЛОАДЕР, ЗВЁЗДЫ, ОСНОВНОЙ ФУНКЦИОНАЛ
+    // ==================================
+
+    // (1) Создаём массив из 100 картинок (примерно, "по мотивам мировых шедевров")
+    // Используем те же ссылки для демонстрации — замените на свои реальные при необходимости
+    const cardsAll = [];
+    for (let i = 1; i <= 100; i++) {
+      cardsAll.push({
+        frontImg: `https://i.ibb.co/dWzH9C2/test-card.jpg?random=${i}`
+      });
+    }
+
+    // Текущий набор из 20 карт
+    let cardsData = [];
+
+    // При загрузке:
     document.addEventListener("DOMContentLoaded", () => {
-      // Прелоадер
+      // Прелоадер (3 сек)
       setTimeout(() => {
         const preloader = document.getElementById('preloader');
         preloader.classList.add('hide');
         setTimeout(() => preloader.style.display = 'none', 500);
       }, 3000);
 
+      // Создаём падающие звёзды
       createFallingStars(40);
-      createSmallCards(cardsData);
 
-      const backButton = document.getElementById("backButton");
-      backButton.addEventListener("click", closeOverlay);
+      // Выбираем 20 случайных из 100 и рисуем
+      shuffleAndCreateCards();
 
-      // Переворот большой карты по клику
+      // Событие на «стрелка назад» (закрыть большую карту)
+      const backArrow = document.getElementById("backArrow");
+      backArrow.addEventListener("click", closeOverlay);
+
+      // Событие переворота большой карты
       const bigCard = document.getElementById("bigCard");
       bigCard.addEventListener("click", function() {
         this.classList.toggle("is-flipped");
       });
 
-      // Кнопка "Перетасувати"
-      const shuffleBtn = document.getElementById("shuffleBtn");
-      shuffleBtn.addEventListener("click", shuffleCards);
+      // Событие на «стрелка перетасовки»
+      const shuffleArrow = document.getElementById("shuffleArrow");
+      shuffleArrow.addEventListener("click", () => {
+        refreshCards();
+      });
+
+      // События на нижнее меню (4 иконки)
+      document.getElementById("menuProfile").addEventListener("click", () => openModal("#modalProfile"));
+      document.getElementById("menuDiary").addEventListener("click", () => openModal("#modalDiary"));
+      document.getElementById("menuTraining").addEventListener("click", () => openModal("#modalTraining"));
+      document.getElementById("menuMind").addEventListener("click", () => openModal("#modalMind"));
+
+      // События на закрытие модальных окон (x)
+      document.querySelectorAll(".close-modal").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          const targetId = e.currentTarget.dataset.close;
+          closeModal(targetId);
+        });
+      });
     });
 
-    /**
-     * Генерация падающих звёзд
-     */
+    // Генерация падающих звёзд
     function createFallingStars(count) {
       const starsContainer = document.querySelector(".stars");
       for (let i = 0; i < count; i++) {
@@ -586,95 +666,106 @@
       }
     }
 
-    /**
-     * Создаёт карточки на основе массива данных
-     */
+    // Перемешиваем массив из 100, берём первые 20 и отображаем
+    function shuffleAndCreateCards() {
+      const shuffled = [...cardsAll].sort(() => Math.random() - 0.5);
+      cardsData = shuffled.slice(0, 20);
+      createSmallCards(cardsData);
+    }
+
+    // Рисуем карточки (маленькие) на странице
     function createSmallCards(dataArray) {
       const grid = document.querySelector(".cards-grid");
-      grid.innerHTML = ""; // очистка перед генерацией
+      grid.innerHTML = "";
       dataArray.forEach((item, i) => {
         const container = document.createElement("div");
         container.classList.add("card-container");
         container.style.setProperty("--i", i);
 
-        // Маленькая карта
         const smallCard = document.createElement("div");
         smallCard.classList.add("small-card");
 
-        // Лицевая сторона (фон)
         const front = document.createElement("div");
         front.classList.add("small-card-front");
         front.style.backgroundImage = `url("${item.frontImg}")`;
 
-        // Подпись (логотип)
+        // Логотип
         const logo = document.createElement("div");
         logo.classList.add("logo");
         logo.textContent = "by Iryna Kolokolova";
         front.appendChild(logo);
 
-        // Собираем
         smallCard.appendChild(front);
         container.appendChild(smallCard);
         grid.appendChild(container);
 
-        // На клик — открыть оверлей с большой картой
+        // Клик по карте => открыть оверлей
         smallCard.addEventListener("click", () => {
           openOverlay(item);
         });
       });
     }
 
-    /**
-     * Открыть оверлей (показать большую карту)
-     */
+    // Открыть увеличенную карту (оверлей)
     function openOverlay(cardData) {
       const overlay = document.getElementById("overlay");
       overlay.classList.add("active");
 
-      const backButton = document.getElementById("backButton");
-      backButton.style.display = "block";
+      // Скрываем кнопку перетасовки
+      const shuffleArrow = document.getElementById("shuffleArrow");
+      shuffleArrow.style.display = "none";
 
-      // Наполняем большую карту данными
+      // Показываем стрелку назад
+      const backArrow = document.getElementById("backArrow");
+      backArrow.style.display = "flex";
+
+      // Заполняем bigCard
       const bigCardFront = document.getElementById("bigCardFront");
-      const bigCardTitle = document.getElementById("bigCardTitle");
-      const bigCardDescription = document.getElementById("bigCardDescription");
-
       bigCardFront.style.backgroundImage = `url("${cardData.frontImg}")`;
-      bigCardTitle.textContent = cardData.title;
-      bigCardDescription.textContent = cardData.description;
 
-      // Сброс "is-flipped"
+      // Сбрасываем переворот
       const bigCard = document.getElementById("bigCard");
       bigCard.classList.remove("is-flipped");
     }
 
-    /**
-     * Закрыть оверлей (вернуться к маленьким картам)
-     */
+    // Закрыть оверлей
     function closeOverlay() {
       const overlay = document.getElementById("overlay");
       overlay.classList.remove("active");
 
-      const backButton = document.getElementById("backButton");
-      backButton.style.display = "none";
+      // Показать кнопку перетасовки
+      const shuffleArrow = document.getElementById("shuffleArrow");
+      shuffleArrow.style.display = "flex";
+
+      // Спрятать стрелку назад
+      const backArrow = document.getElementById("backArrow");
+      backArrow.style.display = "none";
     }
 
-    /**
-     * Перемешивание карт (анимация)
-     */
-    function shuffleCards() {
-      // Перемешаем массив cardsData
-      const shuffled = [...cardsData].sort(() => Math.random() - 0.5);
-
-      // Дополнительно можно добавить класс анимации на grid (или на каждую карту)
+    // Обновить (перетасовать) колоду
+    function refreshCards() {
       const grid = document.querySelector(".cards-grid");
-      grid.classList.add("shuffle-animation");
+      grid.classList.add("magic-refresh");
 
-      // Через небольшой таймаут заново создаём карточки
       setTimeout(() => {
-        createSmallCards(shuffled);
-        grid.classList.remove("shuffle-animation");
-      }, 300); // 300 мс — время условной "тряски", на ваше усмотрение
+        shuffleAndCreateCards();
+        grid.classList.remove("magic-refresh");
+      }, 800);
+    }
+
+    // Открыть модалку
+    function openModal(id) {
+      const modal = document.querySelector(id);
+      if(modal) {
+        modal.classList.add("active");
+      }
+    }
+    // Закрыть модалку
+    function closeModal(id) {
+      const modal = document.querySelector(id);
+      if(modal) {
+        modal.classList.remove("active");
+      }
     }
   </script>
 </body>

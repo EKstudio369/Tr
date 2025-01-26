@@ -71,7 +71,7 @@
     body {
       width: 100%;
       height: 100vh;
-      overflow: hidden; /* чтобы страница не прокручивалась */
+      overflow: hidden; 
       background: linear-gradient(135deg, #1e1e2f, #2c2c54);
       display: flex;
       flex-direction: column;
@@ -91,8 +91,8 @@
     .site-description {
       color: #fff;
       text-align: center;
-      margin-top: 10px; /* чуть уменьшили */
-      font-size: 1.1rem; /* чуть меньше */
+      margin-top: 10px; 
+      font-size: 1.1rem; 
       line-height: 1.4;
       max-width: 90%;
       z-index: 2;
@@ -149,13 +149,13 @@
       max-width: 100%;
       gap: 10px;
       padding: 20px;
-      margin-top: 5px; /* подняли выше */
+      margin-top: 5px; /* подняли чуть выше */
     }
 
     /* Контейнер под каждую маленькую карту */
     .card-container {
       width: 80px;
-      height: 112px; /* пропорция 3:4 */
+      height: 112px; 
       perspective: 1000px;
       position: relative;
       transform: scale(0);
@@ -175,7 +175,7 @@
       }
     }
 
-    /* Маленькая карта */
+    /* Маленькая карта (рубашка блондинки) */
     .small-card {
       width: 100%;
       height: 100%;
@@ -230,12 +230,12 @@
       display: flex;
       opacity: 1;
     }
-
+    /* Чтобы клик по фону (а не по big-card) закрывал оверлей */
     .overlay-card-container {
+      position: relative;
       width: 320px; 
       height: 448px; 
       perspective: 2000px;
-      position: relative;
       transform: translateY(20px) scale(0.8);
       animation: zoomIn 0.5s forwards ease;
     }
@@ -352,7 +352,7 @@
     */
     .shuffle-container {
       position: absolute;
-      bottom: 80px; /* подняли чуть выше нижнего меню */
+      bottom: 80px; 
       display: flex;
       align-items: center;
       gap: 5px;
@@ -418,7 +418,7 @@
 
     /*
       =====================================
-      НИЖНЕЕ МЕНЮ (4 иконки, больше размер)
+      НИЖНЕЕ МЕНЮ (4 иконки, побольше)
       =====================================
     */
     .bottom-menu {
@@ -434,14 +434,14 @@
       backdrop-filter: blur(4px);
     }
     .bottom-menu .menu-icon {
-      width: 50px; /* крупнее */
-      height: 50px; /* крупнее */
+      width: 50px; 
+      height: 50px; 
       border-radius: 50%;
       background: rgba(64,224,208,0.2);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.85rem; /* чуть больше */
+      font-size: 0.85rem; 
       color: #40E0D0;
       cursor: pointer;
       transition: 0.3s;
@@ -519,7 +519,7 @@
   <!-- Иконка назад (←) -->
   <div class="back-arrow" id="backArrow">←</div>
 
-  <!-- Описание сайта (более компактное) -->
+  <!-- Описание сайта (компактнее) -->
   <div class="site-description">
     Метафоричні асоціативні карти — це потужний інструмент для роботи з підсвідомістю, який допомагає глибше зрозуміти себе, виявити приховані проблеми та знайти нові рішення.
   </div>
@@ -616,7 +616,7 @@
       // При первом запуске перемешиваем и показываем 16
       shuffleAndCreateCards(16);
 
-      // Стрелка назад (закрыть оверлей)
+      // Кнопка назад (закрыть оверлей)
       const backArrow = document.getElementById("backArrow");
       backArrow.addEventListener("click", closeOverlay);
 
@@ -624,6 +624,16 @@
       const bigCard = document.getElementById("bigCard");
       bigCard.addEventListener("click", function() {
         this.classList.toggle("is-flipped");
+      });
+
+      // Кликом по фону (overlay) тоже закрываем, если клик не внутри big-card
+      const overlay = document.getElementById("overlay");
+      overlay.addEventListener("click", (e) => {
+        // Проверяем, что кликнули именно на overlay, а не на карточку
+        // Если e.target (конкретный элемент) имеет id="overlay", значит клик был на фоне.
+        if(e.target.id === "overlay") {
+          closeOverlay();
+        }
       });
 
       // Перетасовать (иконка + текст)
@@ -677,7 +687,7 @@
       createSmallCards(cardsData);
     }
 
-    // Создать маленькие карточки (все с одной и той же "рубашкой")
+    // Создать маленькие карточки (рубашка блондинки)
     function createSmallCards(dataArray) {
       const grid = document.querySelector(".cards-grid");
       grid.innerHTML = "";
@@ -689,7 +699,7 @@
         const smallCard = document.createElement("div");
         smallCard.classList.add("small-card");
 
-        // Рубашка (блондинка)
+        // Рубашка
         const front = document.createElement("div");
         front.classList.add("small-card-front");
         front.style.backgroundImage = `url("https://i.ibb.co/wcWxxGp/IMG-8462.webp")`;
@@ -747,7 +757,7 @@
       backArrow.style.display = "none";
     }
 
-    // Перетасовать и обновить сетку (с новой анимацией)
+    // Перетасовать и обновить сетку
     function refreshCards(count) {
       const grid = document.querySelector(".cards-grid");
       grid.classList.add("magic-refresh");

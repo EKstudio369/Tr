@@ -33,7 +33,6 @@
       opacity: 0;
       pointer-events: none;
     }
-    /* Текст */
     .preloader-content {
       color: #fff;
       font-family: 'Great Vibes', cursive;
@@ -56,6 +55,20 @@
     }
     @keyframes spin {
       to { transform: rotate(360deg); }
+    }
+
+    /* 
+      =======================================
+      ДОПОЛНИТЕЛЬНАЯ АНИМАЦИЯ ПРИ ЗАГРУЗКЕ СТРАНИЦЫ
+      (Чтобы страница плавно появилась после прелоадера)
+      =======================================
+    */
+    body.not-ready {
+      opacity: 0;
+      transition: opacity 1.2s ease; /* плавность появления */
+    }
+    body.ready {
+      opacity: 1;
     }
 
     /*
@@ -81,6 +94,10 @@
       position: relative;
       -webkit-tap-highlight-color: transparent;
       user-select: none;
+
+      /* По умолчанию сделаем "not-ready", 
+         чтобы потом плавно перейти в "ready" */
+      opacity: 0; 
     }
 
     /*
@@ -136,7 +153,7 @@
 
     /*
       =======================================
-      СЕТКА С МАЛЕНЬКИМИ КАРТАМИ (подняли выше)
+      СЕТКА С 16 КАРТОЧКАМИ (РУБАШКА)
       =======================================
     */
     .cards-grid {
@@ -149,13 +166,13 @@
       max-width: 100%;
       gap: 10px;
       padding: 20px;
-      margin-top: 5px; /* подняли чуть выше */
+      margin-top: 5px; 
     }
 
     /* Контейнер под каждую маленькую карту */
     .card-container {
       width: 80px;
-      height: 112px; 
+      height: 112px; /* пропорция 3:4 */
       perspective: 1000px;
       position: relative;
       transform: scale(0);
@@ -175,7 +192,7 @@
       }
     }
 
-    /* Маленькая карта (рубашка блондинки) */
+    /* Маленькая карта (рубашка) */
     .small-card {
       width: 100%;
       height: 100%;
@@ -230,7 +247,6 @@
       display: flex;
       opacity: 1;
     }
-    /* Чтобы клик по фону (а не по big-card) закрывал оверлей */
     .overlay-card-container {
       position: relative;
       width: 320px; 
@@ -304,12 +320,23 @@
       backface-visibility: hidden;
     }
 
-    /* Передняя сторона (случайная картинка) */
+    /* Передняя сторона (одна из 6 новых карт) + подпись */
     .big-card-front {
       background-size: cover;
       background-position: center;
+      position: relative;
     }
-    /* Задняя сторона — текст + кнопка «Отримати консультацію» */
+    .big-card-front .logo {
+      position: absolute;
+      bottom: 5px;
+      right: 5px;
+      color: #fff;
+      font-size: 0.7rem;
+      text-shadow: 0 0 2px rgba(0,0,0,0.7);
+      z-index: 10;
+    }
+
+    /* Задняя сторона (предсказание + консультация) */
     .big-card-back {
       background: #1b1b2d;
       color: #40E0D0;
@@ -330,7 +357,6 @@
       line-height: 1.4;
       margin: 0 0 10px 0;
     }
-    /* Кнопка "Отримати консультацію" */
     .consult-button {
       display: inline-block;
       background: #40E0D0;
@@ -387,38 +413,30 @@
 
     /*
       =====================================
-      НОВАЯ "МАГИЧЕСКАЯ" АНИМАЦИЯ ПЕРЕТАСОВКИ
+      ПЛАВНАЯ АНИМАЦИЯ ПРИ "ПЕРЕТАСОВКЕ"
       =====================================
     */
-    .magic-refresh {
-      animation: magicRefresh2 1s forwards ease;
+    .smooth-shuffle {
+      animation: smoothShuffle 0.8s forwards ease;
     }
-    @keyframes magicRefresh2 {
+    @keyframes smoothShuffle {
       0% {
-        transform: scale(1) rotate(0deg);
-        filter: brightness(1) hue-rotate(0deg);
-      }
-      25% {
-        transform: scale(1.1) rotate(20deg);
-        filter: brightness(1.2) hue-rotate(90deg);
+        transform: scale(1);
+        opacity: 1;
       }
       50% {
-        transform: scale(0.9) rotate(-15deg);
-        filter: brightness(1.4) hue-rotate(180deg);
-      }
-      75% {
-        transform: scale(1.05) rotate(10deg);
-        filter: brightness(1.2) hue-rotate(270deg);
+        transform: scale(0.9);
+        opacity: 0.7;
       }
       100% {
-        transform: scale(1) rotate(0deg);
-        filter: brightness(1) hue-rotate(0deg);
+        transform: scale(1);
+        opacity: 1;
       }
     }
 
     /*
       =====================================
-      НИЖНЕЕ МЕНЮ (4 иконки, побольше)
+      НИЖНЕЕ МЕНЮ (иконки)
       =====================================
     */
     .bottom-menu {
@@ -441,7 +459,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.85rem; 
+      font-size: 0.85rem;
       color: #40E0D0;
       cursor: pointer;
       transition: 0.3s;
@@ -505,8 +523,7 @@
   </style>
 </head>
 
-<body>
-
+<body class="not-ready">
   <!-- Прелоадер -->
   <div id="preloader">
     <div class="preloader-content">Завантаження...</div>
@@ -524,7 +541,7 @@
     Метафоричні асоціативні карти — це потужний інструмент для роботи з підсвідомістю, який допомагає глибше зрозуміти себе, виявити приховані проблеми та знайти нові рішення.
   </div>
 
-  <!-- Сетка с 16 карточками -->
+  <!-- Сетка с 16 карточками (все — «рубашка» блондинки) -->
   <div class="cards-grid"></div>
 
   <!-- Кнопка «Перетасувати» (стрелочка + текст) снизу -->
@@ -533,7 +550,7 @@
     <div class="shuffle-text" id="shuffleText">Перетасувати</div>
   </div>
 
-  <!-- Нижнее меню (иконки крупнее) -->
+  <!-- Нижнее меню (иконки) -->
   <div class="bottom-menu">
     <div class="menu-icon" id="menuProfile">Профіль</div>
     <div class="menu-icon" id="menuDiary">Щоденник</div>
@@ -541,13 +558,15 @@
     <div class="menu-icon" id="menuMind">Розвиток</div>
   </div>
 
-  <!-- Оверлей (увеличенная карта) -->
+  <!-- Оверлей (большая карта) -->
   <div class="overlay" id="overlay">
     <div class="overlay-card-container">
       <div class="big-card" id="bigCard">
-        <!-- Лицевая сторона (случайная картинка) -->
-        <div class="big-card-face big-card-front" id="bigCardFront"></div>
-        <!-- Задняя сторона (текст + консультация) -->
+        <!-- Передняя сторона (одна из 6 карт) -->
+        <div class="big-card-face big-card-front" id="bigCardFront">
+          <div class="logo">by Iryna Kolokolova</div>
+        </div>
+        <!-- Задняя сторона (без подписи) -->
         <div class="big-card-face big-card-back">
           <h2>Сьогодні на тебе чекає натхнення та внутрішня гармонія!</h2>
           <p>Нехай усі кроки будуть сповнені впевненості й віри в себе.</p>
@@ -591,64 +610,70 @@
 
   <script>
     /* 
-       Массив из 100 карт (случайные изображения picsum.photos).
-       Будем показывать только 16 при перетасовке.
+       МАССИВ из 6 новых карт 
+       (при открытии большой карты выбирается случайная)
     */
-    const cardsAll = [];
-    for (let i = 101; i <= 200; i++) {
-      cardsAll.push({
-        randomImg: `https://picsum.photos/id/${i}/300/400`
-      });
-    }
+    const bigImages = [
+      "https://i.ibb.co/Xb8XWSF/IMG-8479.webp",
+      "https://i.ibb.co/4fq2yGt/IMG-8478.webp",
+      "https://i.ibb.co/X7DWNKJ/IMG-8477.webp",
+      "https://i.ibb.co/GvFD8Bs/IMG-8468.webp",
+      "https://i.ibb.co/4tChY0G/IMG-8467.webp",
+      "https://i.ibb.co/JyCLnpT/IMG-8466.webp"
+    ];
 
-    let cardsData = []; // текущие 16 карт
+    // Количество маленьких карт
+    const CARD_COUNT = 16;
 
     document.addEventListener("DOMContentLoaded", () => {
       // Прелоадер
       setTimeout(() => {
         const preloader = document.getElementById('preloader');
         preloader.classList.add('hide');
-        setTimeout(() => preloader.style.display = 'none', 500);
+        setTimeout(() => {
+          preloader.style.display = 'none';
+          // Плавное появление body
+          document.body.classList.remove('not-ready');
+          document.body.classList.add('ready');
+        }, 500);
       }, 3000);
 
       createFallingStars(40);
 
-      // При первом запуске перемешиваем и показываем 16
-      shuffleAndCreateCards(16);
+      // Создаём 16 маленьких карт (все с одной "рубашкой")
+      createSmallCards(CARD_COUNT);
 
-      // Кнопка назад (закрыть оверлей)
+      // Кнопка назад (стрелка) для закрытия оверлея
       const backArrow = document.getElementById("backArrow");
       backArrow.addEventListener("click", closeOverlay);
 
       // Переворот большой карты
       const bigCard = document.getElementById("bigCard");
-      bigCard.addEventListener("click", function() {
-        this.classList.toggle("is-flipped");
+      bigCard.addEventListener("click", () => {
+        bigCard.classList.toggle("is-flipped");
       });
 
-      // Кликом по фону (overlay) тоже закрываем, если клик не внутри big-card
+      // Клик по фону оверлея для закрытия
       const overlay = document.getElementById("overlay");
       overlay.addEventListener("click", (e) => {
-        // Проверяем, что кликнули именно на overlay, а не на карточку
-        // Если e.target (конкретный элемент) имеет id="overlay", значит клик был на фоне.
         if(e.target.id === "overlay") {
           closeOverlay();
         }
       });
 
-      // Перетасовать (иконка + текст)
+      // "Перетасувати" (стрелка + текст)
       const shuffleArrow = document.getElementById("shuffleArrow");
       const shuffleText = document.getElementById("shuffleText");
-      shuffleArrow.addEventListener("click", () => refreshCards(16));
-      shuffleText.addEventListener("click", () => refreshCards(16));
+      shuffleArrow.addEventListener("click", shuffleCards);
+      shuffleText.addEventListener("click", shuffleCards);
 
-      // Модальные окна (нижнее меню)
+      // Нижнее меню (модальные окна)
       document.getElementById("menuProfile").addEventListener("click", () => openModal("#modalProfile"));
       document.getElementById("menuDiary").addEventListener("click", () => openModal("#modalDiary"));
       document.getElementById("menuTraining").addEventListener("click", () => openModal("#modalTraining"));
       document.getElementById("menuMind").addEventListener("click", () => openModal("#modalMind"));
 
-      // Закрыть модалку (крестик)
+      // Закрытие модалок (крестик)
       document.querySelectorAll(".close-modal").forEach(btn => {
         btn.addEventListener("click", (e) => {
           const targetId = e.currentTarget.dataset.close;
@@ -657,7 +682,92 @@
       });
     });
 
-    // Создание звёзд
+    // Создание 16 маленьких карт (все с рубашкой блондинки)
+    function createSmallCards(count) {
+      const grid = document.querySelector(".cards-grid");
+      grid.innerHTML = "";
+      for(let i=0; i<count; i++){
+        const container = document.createElement("div");
+        container.classList.add("card-container");
+        container.style.setProperty("--i", i);
+
+        const smallCard = document.createElement("div");
+        smallCard.classList.add("small-card");
+
+        // "Рубашка"
+        const front = document.createElement("div");
+        front.classList.add("small-card-front");
+        front.style.backgroundImage = `url("https://i.ibb.co/wcWxxGp/IMG-8462.webp")`;
+
+        // Лого
+        const logo = document.createElement("div");
+        logo.classList.add("logo");
+        logo.textContent = "by Iryna Kolokolova";
+        front.appendChild(logo);
+
+        smallCard.appendChild(front);
+        container.appendChild(smallCard);
+        grid.appendChild(container);
+
+        // Клик => открыть большую карту (случайная из массива bigImages)
+        smallCard.addEventListener("click", () => {
+          openOverlay();
+        });
+      }
+    }
+
+    // При открытии большой карты — берём случайную картинку из bigImages
+    function openOverlay() {
+      const overlay = document.getElementById("overlay");
+      overlay.classList.add("active");
+
+      // Скрыть "Перетасувати"
+      const shuffleContainer = document.getElementById("shuffleContainer");
+      shuffleContainer.style.display = "none";
+
+      // Показать стрелку назад
+      const backArrow = document.getElementById("backArrow");
+      backArrow.style.display = "flex";
+
+      // Ставим случайную картинку на big-card-front
+      const randomIndex = Math.floor(Math.random()*bigImages.length);
+      const frontImg = bigImages[randomIndex];
+
+      const bigCardFront = document.getElementById("bigCardFront");
+      bigCardFront.style.backgroundImage = `url("${frontImg}")`;
+
+      // Сброс "is-flipped"
+      const bigCard = document.getElementById("bigCard");
+      bigCard.classList.remove("is-flipped");
+    }
+
+    // Закрыть оверлей
+    function closeOverlay() {
+      const overlay = document.getElementById("overlay");
+      overlay.classList.remove("active");
+
+      // Показать "Перетасувати"
+      const shuffleContainer = document.getElementById("shuffleContainer");
+      shuffleContainer.style.display = "flex";
+
+      // Скрыть стрелку назад
+      const backArrow = document.getElementById("backArrow");
+      backArrow.style.display = "none";
+    }
+
+    // "Перетасувати" (просто заново создаём маленькие карты + анимация)
+    function shuffleCards() {
+      const grid = document.querySelector(".cards-grid");
+      grid.classList.add("smooth-shuffle");
+
+      setTimeout(() => {
+        // Пересоздаём 16 "рубашек" заново
+        createSmallCards(CARD_COUNT);
+        grid.classList.remove("smooth-shuffle");
+      }, 800);
+    }
+
+    // Падающие звёзды
     function createFallingStars(count) {
       const starsContainer = document.querySelector(".stars");
       for (let i = 0; i < count; i++) {
@@ -678,94 +788,6 @@
 
         starsContainer.appendChild(star);
       }
-    }
-
-    // Перемешать весь массив и взять N первых
-    function shuffleAndCreateCards(count) {
-      const shuffled = [...cardsAll].sort(() => Math.random() - 0.5);
-      cardsData = shuffled.slice(0, count);
-      createSmallCards(cardsData);
-    }
-
-    // Создать маленькие карточки (рубашка блондинки)
-    function createSmallCards(dataArray) {
-      const grid = document.querySelector(".cards-grid");
-      grid.innerHTML = "";
-      dataArray.forEach((item, i) => {
-        const container = document.createElement("div");
-        container.classList.add("card-container");
-        container.style.setProperty("--i", i);
-
-        const smallCard = document.createElement("div");
-        smallCard.classList.add("small-card");
-
-        // Рубашка
-        const front = document.createElement("div");
-        front.classList.add("small-card-front");
-        front.style.backgroundImage = `url("https://i.ibb.co/wcWxxGp/IMG-8462.webp")`;
-
-        // Логотип
-        const logo = document.createElement("div");
-        logo.classList.add("logo");
-        logo.textContent = "by Iryna Kolokolova";
-        front.appendChild(logo);
-
-        smallCard.appendChild(front);
-        container.appendChild(smallCard);
-        grid.appendChild(container);
-
-        // Клик => открыть большую карту
-        smallCard.addEventListener("click", () => {
-          openOverlay(item.randomImg);
-        });
-      });
-    }
-
-    // Открыть большую карту (overlay)
-    function openOverlay(randomImg) {
-      const overlay = document.getElementById("overlay");
-      overlay.classList.add("active");
-
-      // Скрыть «Перетасувати»
-      const shuffleContainer = document.getElementById("shuffleContainer");
-      shuffleContainer.style.display = "none";
-
-      // Показать стрелку назад
-      const backArrow = document.getElementById("backArrow");
-      backArrow.style.display = "flex";
-
-      // Задать фон передней стороны большой карты
-      const bigCardFront = document.getElementById("bigCardFront");
-      bigCardFront.style.backgroundImage = `url("${randomImg}")`;
-
-      // Сброс переворота
-      const bigCard = document.getElementById("bigCard");
-      bigCard.classList.remove("is-flipped");
-    }
-
-    // Закрыть большую карту
-    function closeOverlay() {
-      const overlay = document.getElementById("overlay");
-      overlay.classList.remove("active");
-
-      // Показать «Перетасувати»
-      const shuffleContainer = document.getElementById("shuffleContainer");
-      shuffleContainer.style.display = "flex";
-
-      // Скрыть стрелку назад
-      const backArrow = document.getElementById("backArrow");
-      backArrow.style.display = "none";
-    }
-
-    // Перетасовать и обновить сетку
-    function refreshCards(count) {
-      const grid = document.querySelector(".cards-grid");
-      grid.classList.add("magic-refresh");
-
-      setTimeout(() => {
-        shuffleAndCreateCards(count);
-        grid.classList.remove("magic-refresh");
-      }, 1000);
     }
 
     // Модалки (нижнее меню)
